@@ -103,6 +103,31 @@ Journal chronologique des décisions actées et évolutions du projet
   via `execute_sql` (le trigger `handle_new_user` met tout nouveau compte
   à `user` par défaut — c'est le comportement voulu, ce compte est
   l'unique exception bootstrap).
+- Implémentation Phase 2 (super admin) : `src/lib/supabase/admin.ts`
+  (client service_role, usage restreint aux appels Auth Admin API sans
+  équivalent RLS), `src/lib/auth/guards.ts` + `src/app/admin/layout.tsx`
+  (garde-fou), CRUD manifestations, invitation/retrait d'admins de
+  manifestation par email, vue globale bénévoles/points en lecture seule.
+- Bug trouvé par `tsc --noEmit` avant tout run : le composant shadcn
+  `Button` généré (basé sur Base UI, pas Radix comme chez Economat FDV)
+  n'a pas de prop `asChild` — Base UI utilise le pattern
+  `render={<Link .../>}`. Corrigé, plus aucune autre occurrence dans le
+  code.
+- `bun run build`, `bunx tsc --noEmit`, `bun run lint` : tous verts.
+- **Limitation d'environnement rencontrée** : tentative de vérification
+  bout-en-bout dans un vrai navigateur (Playwright + Chromium headless)
+  infructueuse — le transport par pipe par défaut de Playwright ne
+  survit pas au sandbox de cette session (confirmé indépendant du code
+  applicatif : le même binaire Chromium lancé directement au shell
+  fonctionne et répond correctement sur le port CDP ; spawné depuis un
+  script Bun via `child_process.spawn`, il est tué par SIGKILL en moins
+  d'une seconde, y compris en connectant Playwright via `connectOverCDP`
+  plutôt que son lancement interne par pipe). Deux comptes de test
+  jetables créés et supprimés proprement pendant l'investigation (aucune
+  manifestation de test n'a été créée, confirmé par requête SQL). Le
+  clic-par-clic réel dans un navigateur par Xavier reste recommandé avant
+  de considérer la Phase 2 comme définitivement validée en conditions
+  réelles.
 
 ## 2026-07-01 — Amorçage du projet
 

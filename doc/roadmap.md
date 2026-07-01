@@ -88,11 +88,41 @@
 
 **Phase 1 terminée.**
 
-### Phase 2 — Super admin
+### Phase 2 — Super admin (terminée le 2026-07-01, sauf 1 point non vérifié)
 
-- CRUD `manifestations`.
-- Gestion des `manifestation_admins` (invitation).
-- Vue globale bénévoles/points (lecture seule à ce stade).
+Décisions tranchées avec Xavier avant de coder : invitation des admins de
+manifestation par email (`auth.admin.inviteUserByEmail`, crée le compte
+directement — limitation v1 connue : échoue si l'email a déjà un compte,
+pas de fusion avec un compte bénévole existant, à revisiter seulement si
+ça arrive réellement) ; bootstrap du premier super_admin
+(`xavier@tarin.ch`) par création directe de compte plutôt que par
+`/signup`.
+
+- [x] `src/lib/supabase/admin.ts` — client `service_role`, strictement
+      réservé aux opérations sans équivalent RLS (Auth Admin API pour les
+      invitations). Toutes les écritures de données passent par le
+      client RLS-scopé habituel, jamais par ce client.
+- [x] `src/lib/auth/guards.ts` (`requireSuperAdmin()`) + `src/app/admin/layout.tsx`
+      — garde-fou sur toutes les routes `/admin/*`.
+- [x] CRUD `manifestations` (`/admin/manifestations`, `/new`, `/[id]`).
+- [x] Gestion des `manifestation_admins` (invitation par email + retrait).
+- [x] Vue globale bénévoles/points en lecture seule (`/admin/volunteers`).
+- [x] `bun run build`, `bunx tsc --noEmit`, `bun run lint` : tous verts.
+- [x] Bug shadcn/Base UI trouvé et corrigé par le typecheck avant tout
+      run : le nouveau `Button` (Base UI, pas Radix) n'a pas de prop
+      `asChild` — remplacé par le pattern Base UI `render={<Link .../>}`.
+- [ ] **Non vérifié en conditions réelles** : le clic-par-clic complet
+      dans un vrai navigateur (créer une manifestation, l'éditer, inviter
+      un admin) n'a pas pu être automatisé — Chromium headless ne survit
+      pas au sandbox de l'environnement d'exécution de cette session
+      (le transport par pipe de Playwright est tué quelques centaines de
+      ms après lancement ; confirmé indépendant du code de l'app :
+      le même binaire lancé directement au shell fonctionne, mais spawné
+      depuis un script Bun il est tué par SIGKILL). Les vérifications
+      statiques (build/typecheck/lint) et la preuve bout-en-bout du
+      Phase 1 (auth + RLS via Postgres réel) donnent un bon niveau de
+      confiance, mais un vrai clic-par-clic par Xavier reste recommandé
+      avant de considérer la Phase 2 définitivement close.
 
 ### Phase 3 — Admin de manifestation
 
