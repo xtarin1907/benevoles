@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 // Handles Supabase's classic implicit-flow redirect: GoTrue's own hosted
@@ -37,10 +38,14 @@ export default function AuthCallbackPage() {
   }, [router])
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-8">
-      <p className="text-sm text-muted-foreground">
-        {error ?? "Connexion en cours…"}
-      </p>
+    <main className="flex min-h-screen items-center justify-center p-4 sm:p-8">
+      {error ? (
+        <p className="text-sm text-destructive">{error}</p>
+      ) : (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" /> Connexion en cours…
+        </p>
+      )}
     </main>
   )
 }

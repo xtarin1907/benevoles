@@ -1,3 +1,4 @@
+import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,6 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button"
+import { FlashToast } from "@/components/flash-toast"
 import { requireManifestationAccess } from "@/lib/auth/guards"
 import { createSecteur, deleteSecteur } from "./actions"
 
@@ -32,37 +35,47 @@ export default async function SecteursPage(props: {
 
   return (
     <div className="flex max-w-lg flex-col gap-6">
+      <FlashToast error={error} />
       <h1 className="text-xl font-semibold">Secteurs</h1>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nom</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {secteurs?.map((s) => (
-            <TableRow key={s.id}>
-              <TableCell className="font-medium">{s.name}</TableCell>
-              <TableCell>
-                <form action={deleteSecteur.bind(null, id, s.id)}>
-                  <Button type="submit" variant="ghost" size="sm">
-                    Supprimer
-                  </Button>
-                </form>
-              </TableCell>
-            </TableRow>
-          ))}
-          {secteurs?.length === 0 && (
+      <div className="overflow-x-auto rounded-lg border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={2} className="text-center text-muted-foreground">
-                Aucun secteur pour l&apos;instant.
-              </TableCell>
+              <TableHead>Nom</TableHead>
+              <TableHead />
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {secteurs?.map((s) => {
+              const formId = `delete-secteur-${s.id}`
+              return (
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium">{s.name}</TableCell>
+                  <TableCell className="text-right">
+                    <form id={formId} action={deleteSecteur.bind(null, id, s.id)} />
+                    <ConfirmSubmitButton
+                      formId={formId}
+                      variant="ghost"
+                      title="Supprimer ce secteur ?"
+                      description="Cette action est irréversible et supprimera aussi tous les shifts de ce secteur."
+                    >
+                      <Trash2 /> Supprimer
+                    </ConfirmSubmitButton>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+            {secteurs?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={2} className="text-center text-muted-foreground">
+                  Aucun secteur pour l&apos;instant.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       <Card>
         <CardHeader>
@@ -80,9 +93,8 @@ export default async function SecteursPage(props: {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="colorHex">Couleur (optionnel, hérite de la manifestation sinon)</Label>
-              <Input id="colorHex" name="colorHex" type="color" />
+              <Input id="colorHex" name="colorHex" type="color" className="h-9 w-16 p-1" />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit">Créer</Button>
           </form>
         </CardContent>

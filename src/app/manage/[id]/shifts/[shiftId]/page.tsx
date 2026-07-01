@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { Check, CheckCircle2, Users, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { FlashToast } from "@/components/flash-toast"
 import { requireManifestationAccess } from "@/lib/auth/guards"
 import { updateSignupStatus } from "./actions"
 
@@ -19,6 +21,14 @@ const STATUS_LABELS: Record<string, string> = {
   declined: "Refusé",
   completed: "Effectué",
   no_show: "Absent",
+}
+
+const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  applied: "secondary",
+  confirmed: "default",
+  declined: "destructive",
+  completed: "outline",
+  no_show: "destructive",
 }
 
 export default async function ShiftDetailPage(props: {
@@ -52,9 +62,11 @@ export default async function ShiftDetailPage(props: {
 
   const requiresApproval = manifestation?.shift_signup_mode === "admin_approval"
   const updateStatus = updateSignupStatus.bind(null, id, shiftId)
+  const confirmedCount = signups?.filter((s) => s.status === "confirmed" || s.status === "completed").length ?? 0
 
   return (
     <div className="flex max-w-lg flex-col gap-6">
+      <FlashToast error={error} />
       <Card>
         <CardHeader>
           <CardTitle>{shift.name}</CardTitle>
@@ -63,7 +75,10 @@ export default async function ShiftDetailPage(props: {
           <p><span className="text-muted-foreground">Secteur :</span> {shift.secteurs?.name}</p>
           <p><span className="text-muted-foreground">Début :</span> {new Date(shift.start_at).toLocaleString("fr-CH")}</p>
           <p><span className="text-muted-foreground">Fin :</span> {new Date(shift.end_at).toLocaleString("fr-CH")}</p>
-          <p><span className="text-muted-foreground">Capacité :</span> {shift.capacity}</p>
+          <p className="flex items-center gap-1.5">
+            <Users className="size-3.5 text-muted-foreground" />
+            <span className="text-muted-foreground">Capacité :</span> {confirmedCount} / {shift.capacity}
+          </p>
           {shift.description && <p className="mt-2">{shift.description}</p>}
         </CardContent>
       </Card>
@@ -73,53 +88,61 @@ export default async function ShiftDetailPage(props: {
           <CardTitle>Inscriptions</CardTitle>
         </CardHeader>
         <CardContent>
-          {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Bénévole</TableHead>
-                <TableHead>Statut</TableHead>
-                {requiresApproval && <TableHead />}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {signups?.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>{s.profiles?.full_name ?? s.profiles?.email}</TableCell>
-                  <TableCell>
-                    <Badge variant={s.status === "confirmed" ? "default" : "secondary"}>
-                      {STATUS_LABELS[s.status] ?? s.status}
-                    </Badge>
-                  </TableCell>
-                  {requiresApproval && (
-                    <TableCell className="flex gap-2">
-                      {s.status === "applied" && (
+          <div className="overflow-x-auto rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Bénévole</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {signups?.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="whitespace-nowrap">
+                      {s.profiles?.full_name ?? s.profiles?.email}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={STATUS_VARIANTS[s.status] ?? "secondary"}>
+                        {STATUS_LABELS[s.status] ?? s.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="flex flex-wrap justify-end gap-2">
+                      {requiresApproval && s.status === "applied" && (
                         <>
                           <form action={updateStatus.bind(null, s.id, "confirmed")}>
                             <Button type="submit" size="sm">
-                              Accepter
+                              <Check /> Accepter
                             </Button>
                           </form>
                           <form action={updateStatus.bind(null, s.id, "declined")}>
                             <Button type="submit" variant="ghost" size="sm">
-                              Refuser
+                              <X /> Refuser
                             </Button>
                           </form>
                         </>
                       )}
+                      {s.status === "confirmed" && (
+                        <form action={updateStatus.bind(null, s.id, "completed")}>
+                          <Button type="submit" variant="outline" size="sm">
+                            <CheckCircle2 /> Marquer effectué
+                          </Button>
+                        </form>
+                      )}
                     </TableCell>
-                  )}
-                </TableRow>
-              ))}
-              {signups?.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={requiresApproval ? 3 : 2} className="text-center text-muted-foreground">
-                    Aucune inscription pour l&apos;instant.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                  </TableRow>
+                ))}
+                {signups?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                      Aucune inscription pour l&apos;instant.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { FlashToast } from "@/components/flash-toast"
 import { requireSuperAdmin } from "@/lib/auth/guards"
 import { createManifestation } from "../actions"
 
@@ -21,6 +22,7 @@ export default async function NewManifestationPage(props: {
 
   return (
     <Card className="max-w-lg">
+      <FlashToast error={error} />
       <CardHeader>
         <CardTitle>Nouvelle manifestation</CardTitle>
       </CardHeader>
@@ -36,7 +38,7 @@ export default async function NewManifestationPage(props: {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="colorHex">Couleur</Label>
-            <Input id="colorHex" name="colorHex" type="color" defaultValue="#6366f1" />
+            <Input id="colorHex" name="colorHex" type="color" defaultValue="#6366f1" className="h-9 w-16 p-1" />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="shiftSignupMode">Inscription aux shifts</Label>
@@ -50,7 +52,6 @@ export default async function NewManifestationPage(props: {
               </SelectContent>
             </Select>
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
           <Button type="submit">Créer</Button>
         </form>
       </CardContent>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FlashToast } from "@/components/flash-toast"
 import { createClient } from "@/lib/supabase/server"
 import { updatePassword } from "./actions"
 
@@ -24,7 +25,8 @@ export default async function UpdatePasswordPage(props: {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-8">
+    <main className="flex min-h-screen items-center justify-center p-4 sm:p-8">
+      <FlashToast error={error} />
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Choisir un mot de passe</CardTitle>
@@ -33,9 +35,15 @@ export default async function UpdatePasswordPage(props: {
           <form action={updatePassword} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">Nouveau mot de passe</Label>
-              <Input id="password" name="password" type="password" required minLength={6} />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit">Valider</Button>
           </form>
         </CardContent>

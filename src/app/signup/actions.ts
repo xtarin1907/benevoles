@@ -14,13 +14,16 @@ export async function signup(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
   const fullName = formData.get("fullName") as string
+  const newsletterConsent = formData.get("newsletterConsent") === "on"
   const next = safeNext(formData.get("next"))
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    // Read by handle_new_user() to seed profiles.newsletter_consent --
+    // explicit opt-in, unchecked by default (CLAUDE.md non-négociable).
+    options: { data: { full_name: fullName, newsletter_consent: newsletterConsent } },
   })
 
   if (error) {

@@ -21,6 +21,8 @@ toute la plateforme.
 | `phone` | text | optionnel |
 | `avatar_url` | text | optionnel |
 | `platform_role` | enum `'super_admin' \| 'user'` | défaut `'user'` |
+| `newsletter_consent` | boolean | défaut `false` — opt-in explicite (CLAUDE.md non-négociable), ajouté Phase 7 |
+| `newsletter_consent_at` | timestamptz, nullable | audit — écrit uniquement par un trigger (`set_newsletter_consent_at`), jamais directement par l'utilisateur, ajouté Phase 7 |
 | `created_at` | timestamptz | |
 
 ### `manifestations`
@@ -191,6 +193,11 @@ de permission côté application.
   super_admin tout.
 - `platform_settings` : lecture publique (`anon` + `authenticated`) ;
   écriture réservée au super_admin.
+- `profiles` (ajout Phase 7) : tout `manifestation_admin` (de n'importe
+  quelle manifestation) peut lire tous les profils — nécessaire pour
+  construire la liste de destinataires d'une newsletter `'all_platform'`,
+  conséquence directe et déjà acceptée de la Décision #2 (n'importe quel
+  admin peut cibler toute la plateforme), pas un nouveau risque.
 
 Le test d'isolation RLS inter-manifestation (un admin de A ne voit jamais
 B) est un non-négociable (`CLAUDE.md`) et doit être le premier test

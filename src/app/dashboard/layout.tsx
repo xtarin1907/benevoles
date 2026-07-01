@@ -2,10 +2,7 @@ import { redirect } from "next/navigation"
 import { SiteHeader, type NavItem } from "@/components/site-header"
 import { createClient } from "@/lib/supabase/server"
 
-// Lighter than /admin/layout.tsx's requireSuperAdmin(): manifestation
-// admins (not just super_admin) belong here. Each page under /manage
-// enforces the real per-manifestation check via requireManifestationAccess().
-export default async function ManageLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const {
     data: { user },
@@ -22,12 +19,22 @@ export default async function ManageLayout({ children }: { children: React.React
     .single()
 
   const navItems: NavItem[] = [
-    { href: "/manage", label: "Mes manifestations" },
     { href: "/dashboard", label: "Mon profil" },
+    { href: "/dashboard/engagements", label: "Mes engagements" },
+    { href: "/dashboard/signups", label: "Mes inscriptions" },
+    { href: "/dashboard/points", label: "Mes points" },
   ]
 
   if (profile?.platform_role === "super_admin") {
     navItems.push({ href: "/admin/manifestations", label: "Admin" })
+  } else {
+    const { count } = await supabase
+      .from("manifestation_admins")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+    if (count && count > 0) {
+      navItems.push({ href: "/manage", label: "Gérer" })
+    }
   }
 
   return (

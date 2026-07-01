@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { LayoutGrid, Mail, UserMinus, Users } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button"
+import { FlashToast } from "@/components/flash-toast"
 import { requireManifestationAccess } from "@/lib/auth/guards"
 import {
   inviteManifestationAdmin,
@@ -48,16 +52,24 @@ export default async function ManageManifestationPage(props: {
 
   return (
     <div className="flex max-w-lg flex-col gap-6">
-      <div className="flex gap-4 text-sm">
-        <Link href={`/manage/${id}/secteurs`} className="underline">
-          Secteurs
-        </Link>
-        <Link href={`/manage/${id}/shifts`} className="underline">
-          Shifts
-        </Link>
-      </div>
+      <FlashToast error={error} message={message} />
 
-      <Card>
+      <nav className="flex gap-2 overflow-x-auto text-sm">
+        <Button variant="secondary" size="sm" disabled className="shrink-0">
+          <LayoutGrid /> Branding
+        </Button>
+        <Button variant="ghost" size="sm" render={<Link href={`/manage/${id}/secteurs`} />} className="shrink-0">
+          Secteurs
+        </Button>
+        <Button variant="ghost" size="sm" render={<Link href={`/manage/${id}/shifts`} />} className="shrink-0">
+          Shifts
+        </Button>
+        <Button variant="ghost" size="sm" render={<Link href={`/manage/${id}/newsletter`} />} className="shrink-0">
+          <Mail /> Newsletter
+        </Button>
+      </nav>
+
+      <Card style={{ borderLeftColor: manifestation.color_hex, borderLeftWidth: 4 }}>
         <CardHeader>
           <CardTitle>{manifestation.name}</CardTitle>
         </CardHeader>
@@ -86,9 +98,10 @@ export default async function ManageManifestationPage(props: {
                 name="colorHex"
                 type="color"
                 defaultValue={manifestation.color_hex}
+                className="h-9 w-16 p-1"
               />
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row">
               <div className="flex flex-1 flex-col gap-2">
                 <Label htmlFor="startDate">Début</Label>
                 <Input
@@ -128,8 +141,6 @@ export default async function ManageManifestationPage(props: {
               />
               Publiée (visible sur la landing page)
             </label>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {message && <p className="text-sm text-muted-foreground">{message}</p>}
             <Button type="submit">Enregistrer</Button>
           </form>
         </CardContent>
@@ -137,24 +148,36 @@ export default async function ManageManifestationPage(props: {
 
       <Card>
         <CardHeader>
-          <CardTitle>Admins de la manifestation</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="size-4" /> Admins de la manifestation
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <ul className="flex flex-col gap-2 text-sm">
-            {admins?.map((a) => (
-              <li key={a.user_id} className="flex items-center justify-between">
-                <span>
-                  {a.profiles?.full_name ?? a.profiles?.email} ({a.role})
-                </span>
-                {isSuperAdmin && (
-                  <form action={removeManifestationAdmin.bind(null, id, a.user_id)}>
-                    <Button type="submit" variant="ghost" size="sm">
-                      Retirer
-                    </Button>
-                  </form>
-                )}
-              </li>
-            ))}
+            {admins?.map((a) => {
+              const formId = `remove-admin-${a.user_id}`
+              return (
+                <li key={a.user_id} className="flex items-center justify-between gap-2">
+                  <span>
+                    {a.profiles?.full_name ?? a.profiles?.email}{" "}
+                    <Badge variant="secondary">{a.role}</Badge>
+                  </span>
+                  {isSuperAdmin && (
+                    <>
+                      <form id={formId} action={removeManifestationAdmin.bind(null, id, a.user_id)} />
+                      <ConfirmSubmitButton
+                        formId={formId}
+                        variant="ghost"
+                        title="Retirer cet admin ?"
+                        description="Cette personne perdra immédiatement l'accès à la gestion de cette manifestation."
+                      >
+                        <UserMinus /> Retirer
+                      </ConfirmSubmitButton>
+                    </>
+                  )}
+                </li>
+              )
+            })}
             {admins?.length === 0 && (
               <li className="text-muted-foreground">Aucun admin pour l&apos;instant.</li>
             )}
@@ -166,7 +189,9 @@ export default async function ManageManifestationPage(props: {
                 <Label htmlFor="email">Inviter un admin par email</Label>
                 <Input id="email" name="email" type="email" required />
               </div>
-              <Button type="submit">Inviter</Button>
+              <Button type="submit">
+                <Mail /> Inviter
+              </Button>
             </form>
           ) : (
             <p className="text-sm text-muted-foreground">

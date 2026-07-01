@@ -283,6 +283,8 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          newsletter_consent: boolean
+          newsletter_consent_at: string | null
           phone: string | null
           platform_role: Database["public"]["Enums"]["app_role"]
         }
@@ -292,6 +294,8 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          newsletter_consent?: boolean
+          newsletter_consent_at?: string | null
           phone?: string | null
           platform_role?: Database["public"]["Enums"]["app_role"]
         }
@@ -301,6 +305,8 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          newsletter_consent?: boolean
+          newsletter_consent_at?: string | null
           phone?: string | null
           platform_role?: Database["public"]["Enums"]["app_role"]
         }
@@ -452,7 +458,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_shift_signup: {
+        Args: { _shift_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          notes: string | null
+          shift_id: string
+          status: Database["public"]["Enums"]["shift_signup_status"]
+          volunteer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shift_signups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "super_admin" | "user"

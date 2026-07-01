@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableBody,
@@ -26,35 +27,48 @@ export default async function VolunteersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Bénévoles</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-xl font-semibold">Bénévoles</h1>
+        <Badge variant="secondary">{volunteers?.length ?? 0}</Badge>
+      </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nom</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Inscrit le</TableHead>
-            <TableHead>Points</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {volunteers?.map((v) => (
-            <TableRow key={v.id}>
-              <TableCell className="font-medium">{v.full_name ?? "—"}</TableCell>
-              <TableCell>{v.email}</TableCell>
-              <TableCell>{new Date(v.created_at).toLocaleDateString("fr-CH")}</TableCell>
-              <TableCell>{totalsByVolunteer.get(v.id) ?? 0}</TableCell>
-            </TableRow>
-          ))}
-          {volunteers?.length === 0 && (
+      <div className="overflow-x-auto rounded-lg border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={4} className="text-center text-muted-foreground">
-                Aucun bénévole inscrit pour l&apos;instant.
-              </TableCell>
+              <TableHead>Nom</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Inscrit le</TableHead>
+              <TableHead>Newsletter</TableHead>
+              <TableHead>Points</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {volunteers?.map((v) => (
+              <TableRow key={v.id}>
+                <TableCell className="font-medium whitespace-nowrap">{v.full_name ?? "—"}</TableCell>
+                <TableCell className="whitespace-nowrap">{v.email}</TableCell>
+                <TableCell className="whitespace-nowrap">
+                  {new Date(v.created_at).toLocaleDateString("fr-CH")}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={v.newsletter_consent ? "default" : "secondary"}>
+                    {v.newsletter_consent ? "Oui" : "Non"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-medium">{totalsByVolunteer.get(v.id) ?? 0}</TableCell>
+              </TableRow>
+            ))}
+            {volunteers?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  Aucun bénévole inscrit pour l&apos;instant.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }

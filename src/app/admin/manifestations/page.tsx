@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,57 +22,59 @@ export default async function ManifestationsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">Manifestations</h1>
         <Button render={<Link href="/admin/manifestations/new" />}>
-          Nouvelle manifestation
+          <Plus /> Nouvelle manifestation
         </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nom</TableHead>
-            <TableHead>Couleur</TableHead>
-            <TableHead>Inscription shifts</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {manifestations?.map((m) => (
-            <TableRow key={m.id}>
-              <TableCell className="font-medium">{m.name}</TableCell>
-              <TableCell>
-                <span
-                  className="inline-block h-4 w-4 rounded-full border"
-                  style={{ backgroundColor: m.color_hex }}
-                />
-              </TableCell>
-              <TableCell>
-                {m.shift_signup_mode === "auto_confirm" ? "Automatique" : "Validation admin"}
-              </TableCell>
-              <TableCell>
-                <Badge variant={m.is_published ? "default" : "secondary"}>
-                  {m.is_published ? "Publiée" : "Brouillon"}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Link href={`/manage/${m.id}`} className="text-sm underline">
-                  Gérer
-                </Link>
-              </TableCell>
-            </TableRow>
-          ))}
-          {manifestations?.length === 0 && (
+      <div className="overflow-x-auto rounded-lg border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
-                Aucune manifestation pour l&apos;instant.
-              </TableCell>
+              <TableHead>Nom</TableHead>
+              <TableHead>Couleur</TableHead>
+              <TableHead>Inscription shifts</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead />
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {manifestations?.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell className="font-medium whitespace-nowrap">{m.name}</TableCell>
+                <TableCell>
+                  <span
+                    className="inline-block size-4 rounded-full border"
+                    style={{ backgroundColor: m.color_hex }}
+                  />
+                </TableCell>
+                <TableCell className="whitespace-nowrap">
+                  {m.shift_signup_mode === "auto_confirm" ? "Automatique" : "Validation admin"}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={m.is_published ? "default" : "secondary"}>
+                    {m.is_published ? "Publiée" : "Brouillon"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="sm" render={<Link href={`/manage/${m.id}`} />}>
+                    Gérer
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {manifestations?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  Aucune manifestation pour l&apos;instant.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }
