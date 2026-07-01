@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label"
 import { signup } from "./actions"
 
 export default async function SignupPage(props: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; next?: string }>
 }) {
-  const { error } = await props.searchParams
+  const { error, next } = await props.searchParams
 
   return (
     <main className="flex min-h-screen items-center justify-center p-8">
@@ -18,6 +18,7 @@ export default async function SignupPage(props: {
         </CardHeader>
         <CardContent>
           <form action={signup} className="flex flex-col gap-4">
+            {next && <input type="hidden" name="next" value={next} />}
             <div className="flex flex-col gap-2">
               <Label htmlFor="fullName">Nom complet</Label>
               <Input id="fullName" name="fullName" required />
@@ -34,7 +35,10 @@ export default async function SignupPage(props: {
             <Button type="submit">S&apos;inscrire</Button>
           </form>
           <p className="mt-4 text-sm text-muted-foreground">
-            Déjà un compte ? <Link href="/login" className="underline">Se connecter</Link>
+            Déjà un compte ?{" "}
+            <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="underline">
+              Se connecter
+            </Link>
           </p>
         </CardContent>
       </Card>

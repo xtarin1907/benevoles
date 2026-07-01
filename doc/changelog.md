@@ -3,6 +3,65 @@
 Journal chronologique des décisions actées et évolutions du projet
 (plus récent en premier).
 
+## 2026-07-01 (suite) — Phase 4 : landing page publique
+
+- `/` remplace la page par défaut de `create-next-app`. Liste des
+  manifestations publiées triée par date, bouton "S'engager" par carte.
+- Ajout du paramètre `next` (avec garde anti-open-redirect — seuls les
+  chemins relatifs sont acceptés) sur `/login` et `/signup`, pour que le
+  visiteur anonyme qui clique "S'engager" revienne à `/` après
+  connexion/inscription au lieu d'atterrir sur `/dashboard`.
+- `engageWithManifestation()` (`src/app/actions.ts`) : upsert idempotent
+  dans `manifestation_engagements` (statut `interested`).
+- Vérifié bout-en-bout via la même technique curl que la Phase 3, sur la
+  vraie manifestation de Xavier : bouton visible en anonyme, engagement
+  réel créé pour un compte de test après connexion, badge "Engagé"
+  affiché ensuite. Compte de test nettoyé (0 résidu vérifié par SQL).
+
+## 2026-07-01 (suite) — Fix récupération de mot de passe + Phase 3
+
+- **Bug trouvé par Xavier** : le lien d'invitation/récupération de mot de
+  passe atterrissait sur `/` (page par défaut Next.js) sans rien pour
+  traiter le jeton d'auth. Cause : Supabase (flux implicite par défaut,
+  `{{ .ConfirmationURL }}`) redirige vers le Site URL avec le jeton en
+  fragment d'URL (`#access_token=...`), invisible côté serveur, et aucune
+  page ne le lisait côté client. Corrigé par l'ajout de
+  `/auth/callback` (Client Component, lit `window.location.hash`,
+  appelle `setSession()`), `/auth/confirm` (Route Handler pour le flux
+  alternatif `token_hash` en query params, si les templates email sont
+  un jour personnalisés), et `/update-password` (formulaire de nouveau
+  mot de passe). Un nouveau lien avec `redirectTo` explicite a été généré
+  via `admin.generateLink` (l'envoi d'email a buté sur le rate-limit du
+  service mail par défaut de Supabase) et donné directement à Xavier.
+- Bug de lint trouvé par `eslint` avant tout run : `react-hooks/set-state-in-effect`
+  sur `/auth/callback` (setState synchrone dans un effet pour le cas
+  "jeton manquant") — corrigé en redirigeant vers `/login?error=...` au
+  lieu d'afficher un état d'erreur local.
+- **Phase 3 implémentée** : réorganisation en `/manage/[id]/*`
+  (accessible aux manifestation_admins, pas seulement au super_admin),
+  garde-fou `requireManifestationAccess()`. Branding déplacé de l'ancien
+  `/admin/manifestations/[id]` (retiré) vers `/manage/[id]`. Ajout CRUD
+  secteurs, CRUD shifts, vue des inscriptions + accepter/refuser pour les
+  manifestations en mode `admin_approval`.
+- **Percée méthodologique de vérification** : Chromium headless reste
+  bloqué dans cet environnement (cf. Phase 2), mais les Server Actions
+  Next.js supportent le POST natif de formulaire (progressive
+  enhancement) — reproductible à la main via `curl` en lisant les champs
+  cachés `$ACTION_*` du HTML rendu (y compris les actions liées avec
+  arguments sérialisés, ex. `$ACTION_1:1=["<manifestation_id>"]`). A
+  permis une vérification bout-en-bout réelle (vraie base Postgres, RLS
+  active, vrai cookie de session) : login, création manifestation,
+  création secteur, création shift, acceptation d'une inscription
+  (`applied` → `confirmed`, vérifié en base). Toutes les données de test
+  nettoyées après coup (0 résidu vérifié par SQL). Cette technique
+  remplace utilement le navigateur headless dans cet environnement —
+  à documenter comme méthode de vérification standard si le blocage
+  Playwright persiste sur les phases suivantes.
+- Confirmé en base : Xavier a lui-même créé "Fête des Vendanges de Lutry"
+  via `/admin/manifestations/new` avec son compte super_admin — la
+  Phase 2 est donc validée en conditions réelles, pas seulement
+  statiquement.
+
 ## 2026-07-01 — Décisions produit tranchées + début du scaffold Phase 1
 
 - Décisions #1/#2/#3 de `roadmap.md` tranchées avec Xavier : inscription à

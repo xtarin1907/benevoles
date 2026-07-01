@@ -57,7 +57,7 @@ export default async function ManifestationsPage() {
                 </Badge>
               </TableCell>
               <TableCell>
-                <Link href={`/admin/manifestations/${m.id}`} className="text-sm underline">
+                <Link href={`/manage/${m.id}`} className="text-sm underline">
                   Gérer
                 </Link>
               </TableCell>

@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label"
 import { login } from "./actions"
 
 export default async function LoginPage(props: {
-  searchParams: Promise<{ error?: string; message?: string }>
+  searchParams: Promise<{ error?: string; message?: string; next?: string }>
 }) {
-  const { error, message } = await props.searchParams
+  const { error, message, next } = await props.searchParams
 
   return (
     <main className="flex min-h-screen items-center justify-center p-8">
@@ -18,6 +18,7 @@ export default async function LoginPage(props: {
         </CardHeader>
         <CardContent>
           <form action={login} className="flex flex-col gap-4">
+            {next && <input type="hidden" name="next" value={next} />}
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" required />
@@ -31,7 +32,10 @@ export default async function LoginPage(props: {
             <Button type="submit">Se connecter</Button>
           </form>
           <p className="mt-4 text-sm text-muted-foreground">
-            Pas de compte ? <Link href="/signup" className="underline">S&apos;inscrire</Link>
+            Pas de compte ?{" "}
+            <Link href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"} className="underline">
+              S&apos;inscrire
+            </Link>
           </p>
         </CardContent>
       </Card>

@@ -111,32 +111,79 @@ pas de fusion avec un compte bénévole existant, à revisiter seulement si
 - [x] Bug shadcn/Base UI trouvé et corrigé par le typecheck avant tout
       run : le nouveau `Button` (Base UI, pas Radix) n'a pas de prop
       `asChild` — remplacé par le pattern Base UI `render={<Link .../>}`.
-- [ ] **Non vérifié en conditions réelles** : le clic-par-clic complet
-      dans un vrai navigateur (créer une manifestation, l'éditer, inviter
-      un admin) n'a pas pu être automatisé — Chromium headless ne survit
-      pas au sandbox de l'environnement d'exécution de cette session
-      (le transport par pipe de Playwright est tué quelques centaines de
-      ms après lancement ; confirmé indépendant du code de l'app :
-      le même binaire lancé directement au shell fonctionne, mais spawné
-      depuis un script Bun il est tué par SIGKILL). Les vérifications
-      statiques (build/typecheck/lint) et la preuve bout-en-bout du
-      Phase 1 (auth + RLS via Postgres réel) donnent un bon niveau de
-      confiance, mais un vrai clic-par-clic par Xavier reste recommandé
-      avant de considérer la Phase 2 définitivement close.
+- [x] **Confirmé par Xavier en conditions réelles** : la manifestation
+      "Fête des Vendanges de Lutry" a été créée via `/admin/manifestations/new`
+      par son propre compte super_admin — le clic-par-clic complet
+      fonctionne (le blocage Playwright/Chromium headless mentionné plus
+      haut était une limitation d'environnement de session, pas un bug
+      applicatif). Le manque de page pour le lien de récupération de mot
+      de passe (`/auth/callback`, `/auth/confirm`, `/update-password`) a
+      été trouvé et corrigé au passage.
 
-### Phase 3 — Admin de manifestation
+**Phase 2 terminée.**
 
-- Branding manifestation (logo, couleur, description, dates,
-  publication).
-- CRUD `secteurs` / `shifts`.
-- Vue des inscriptions à ses shifts + validation manuelle (accepter/
-  refuser) pour les manifestations en mode `admin_approval` (Décision #1).
+### Phase 3 — Admin de manifestation (terminée le 2026-07-01)
 
-### Phase 4 — Landing page publique
+Réorganisation d'architecture : les fonctionnalités listées ci-dessous
+sont accessibles aux **manifestation_admins**, pas seulement au
+super_admin — elles vivent donc sous `/manage/[id]/*` (garde-fou
+`requireManifestationAccess()`, super_admin OU admin de cette
+manifestation précise), distinct de `/admin/*` (super_admin uniquement).
+L'ancienne page `/admin/manifestations/[id]` a été retirée ; le
+formulaire de branding qu'elle contenait a été déplacé vers `/manage/[id]`.
+L'invitation/retrait d'admins reste réservée au super_admin (RLS : seul
+un rôle `owner` ou super_admin peut écrire `manifestation_admins`, et
+aucun flux ne crée d'`owner` pour l'instant).
 
-- Liste des manifestations publiées + calendrier consolidé.
-- Point d'entrée d'engagement (inscription compte bénévole → choix
-  manifestation(s)).
+- [x] Branding manifestation (nom, description, logo en URL — pas
+      d'upload de fichier, YAGNI pour l'instant —, couleur, dates début/fin,
+      mode d'inscription aux shifts, publication) — `/manage/[id]`.
+- [x] CRUD `secteurs` — `/manage/[id]/secteurs`.
+- [x] CRUD `shifts` (création avec choix du secteur, capacité, horaires) —
+      `/manage/[id]/shifts`.
+- [x] Vue des inscriptions à un shift + validation manuelle
+      (accepter/refuser) pour les manifestations en mode `admin_approval`
+      (Décision #1) — `/manage/[id]/shifts/[shiftId]`. Marquer un shift
+      "effectué" et l'attribution de points restent hors scope (Phase 6).
+- [x] `bun run build`, `bunx tsc --noEmit`, `bun run lint` : tous verts.
+- [x] **Vérifié bout-en-bout en conditions réelles**, sans navigateur :
+      Chromium headless reste bloqué dans cet environnement de session
+      (cf. Phase 2), mais les Server Actions de Next.js supportent le
+      POST natif de formulaire (progressive enhancement) — reproduit à la
+      main via `curl` en répliquant l'encodage des champs cachés
+      `$ACTION_*` (visibles dans le HTML rendu). A permis de vérifier
+      réellement, avec la vraie base Postgres et RLS active : connexion,
+      création d'une manifestation, création d'un secteur, création d'un
+      shift, et acceptation d'une inscription (statut passé de `applied`
+      à `confirmed`, vérifié en base). Toutes les données de test
+      (manifestation, secteur, shift, 2 comptes jetables) nettoyées après
+      coup — vérifié par requête SQL (0 résidu).
+
+### Phase 4 — Landing page publique (terminée le 2026-07-01)
+
+- [x] `/` remplace la page par défaut `create-next-app` : liste des
+      manifestations publiées (`is_published = true`), triées par
+      `start_date`. **Calendrier consolidé v1 = liste chronologique**, pas
+      une grille calendrier — suffit pour "voir ce qui arrive et quand" ;
+      un vrai widget calendrier est différé tant qu'aucun besoin réel ne
+      le justifie (YAGNI).
+- [x] Point d'entrée d'engagement : bouton "S'engager" par manifestation.
+      Visiteur non connecté → lien vers `/signup?next=/` ; le paramètre
+      `next` (validé côté serveur contre l'open-redirect — seuls les
+      chemins relatifs commençant par `/` sont acceptés) traverse
+      `/signup` → `/login` → destination finale après connexion.
+      Bénévole connecté → server action `engageWithManifestation()`,
+      upsert dans `manifestation_engagements` (idempotent — recliquer
+      n'est pas une erreur). Déjà engagé → badge "Engagé" à la place du
+      bouton.
+- [x] `bun run build`, `bunx tsc --noEmit`, `bun run lint` : tous verts.
+- [x] **Vérifié bout-en-bout** (même technique curl que Phase 3) : sur la
+      vraie manifestation "Fête des Vendanges de Lutry" créée par
+      Xavier — bouton visible pour un visiteur anonyme, connexion d'un
+      bénévole de test, clic sur "S'engager", ligne créée dans
+      `manifestation_engagements` (vérifié en base), badge "Engagé"
+      affiché ensuite à la place du bouton. Compte de test nettoyé après
+      coup (0 résidu vérifié par SQL).
 
 ### Phase 5 — Espace bénévole
 
