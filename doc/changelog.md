@@ -3,6 +3,135 @@
 Journal chronologique des décisions actées et évolutions du projet
 (plus récent en premier).
 
+## 2026-07-02 (suite) — Migration Next.js → Vite + React Router
+
+Demande de Xavier : héberger sur Infomaniak à l'identique de ses autres
+sites (`To-do`, `wyzio-app-support`) — dossier `dist/` statique, upload
+manuel, `.htaccess`, sans process Node. Décision et compromis (perte du
+SEO SSR de la landing, conservé côté données temps réel) actés avec
+Xavier — voir `roadmap.md` décision ouverte #6 et `architecture.md`
+§Stack technique.
+
+- Réécriture complète : 14 Server Actions → fonctions client appelant
+  Supabase directement (RLS reste la frontière de sécurité réelle,
+  `data-model.md`), 23 pages/layouts Server Components → composants
+  client (`useEffect`/state), routes dynamiques `[id]` → `:id` React
+  Router, `src/proxy.ts` (middleware) supprimé (remplacé par
+  `AuthContext` + `supabase-js` qui rafraîchit la session nativement
+  côté navigateur).
+- **2 Supabase Edge Functions créées** (`supabase/functions/invite-
+  manifestation-admin`, `supabase/functions/send-newsletter`) — seul
+  endroit où `SUPABASE_SECRET_KEY` peut encore vivre, ce fichier
+  (`src/lib/supabase/admin.ts`) ne doit jamais atteindre le bundle
+  client d'une SPA. Chaque fonction revérifie elle-même l'autorisation
+  de l'appelant (JWT → `platform_role`/`manifestation_admins`, même
+  logique que l'ancien `guards.ts`) avant d'utiliser la clé service
+  role. Déployées et testées : 4 tests d'autorisation ajoutés
+  (`src/__tests__/edge-functions-auth.test.ts`, même pattern que
+  `rls-isolation.test.ts`) — confirment qu'un admin non-super_admin et
+  un utilisateur sans droit sont bien rejetés (403), et qu'un
+  manifestation_admin légitime passe le contrôle. Les 6 tests RLS
+  existants passent toujours sans changement.
+- Variables d'env : `NEXT_PUBLIC_*` → `VITE_*` (convention Vite).
+  `RESEND_API_KEY`/`RESEND_FROM_EMAIL` sortent du `.env` frontend,
+  deviennent des secrets Supabase (`supabase secrets set`) consommés
+  uniquement par `send-newsletter`.
+- **Erreur commise et corrigée en session** : suppression accidentelle
+  de `src/app/globals.css` (via `rm -rf src/app` pour nettoyer les
+  fichiers Next.js obsolètes) sans vérifier au préalable qu'il portait
+  des modifications non commitées — celles de la palette ambre/or
+  documentée juste en dessous. Irrécupérable via git (vérifié :
+  `git diff`, `git fsck --dangling`, historique local VS Code — aucun
+  n'avait cette version intermédiaire). Reconstruit du mieux possible à
+  partir (a) de lectures faites plus tôt dans la même session avant la
+  suppression (`--background`/`--primary`/etc., 9 propriétés récupérées
+  exactement) et (b) des valeurs exactes citées dans l'entrée de
+  changelog ci-dessous (`--primary` clair/sombre, compilé
+  `#dc7200`/`#f59300`, neutres teinte ~75). Les classes utilitaires
+  `.text-gradient` et `.animate-pulse-subtle` ont dû être
+  **réécrites de zéro** (aucune trace de leur implémentation exacte) —
+  best-effort basé sur leur description ("dégradé sur le titre du
+  hero", "halo doux sur le bouton principal"), à valider visuellement.
+  Rien d'autre n'a été perdu : toutes les pages/actions ont été lues
+  depuis le disque (état réel non commité, y compris la fonctionnalité
+  localisation des shifts) avant toute suppression de fichier.
+
+## 2026-07-02 — Palette ambre/or, landing orientée bénévoles, localisation des shifts
+
+Trois demandes de Xavier : (1) rendu/layout inspiré du projet local
+"Maximus discotecus" (le domaine maximusdiscotecus.ch déployé s'est avéré
+être un outil de partage de matériel sans rapport, pas une vitrine
+nightlife — vérifié par `curl` et par inspection du bundle JS compilé ;
+le vrai signal de design a été trouvé dans le dossier local du projet
+via un agent Explore) ; (2) landing plus orientée bénévoles, pour donner
+envie de s'engager ; (3) logo des organisations (déjà en place, voir
+plus bas) ; (4) localisation des shifts + itinéraire Google Maps, sur le
+modèle du projet `atico-pollensa-guide`.
+
+- **Reversal explicite de palette, décidé par Xavier** : la couleur
+  neutre bleu-ardoise choisie la veille (pour ne pas rivaliser avec le
+  `color_hex` par manifestation) est abandonnée au profit d'un ambre/or
+  chaud, sur demande explicite de Xavier après qu'on lui a signalé la
+  contradiction avec la décision de la veille (`src/app/globals.css`) —
+  `--primary` (light `oklch(0.66 0.18 58)`, dark `oklch(0.75 0.17 65)`,
+  texte de bouton **sombre** pas blanc, l'ambre à cette luminosité n'a pas
+  assez de contraste avec du texte quasi-blanc), `--ring`/`--sidebar-*`
+  alignés, neutres (`background`/`card`/`muted`/`border`) légèrement
+  réchauffés (chroma faible, teinte ~75) pour ne pas jurer avec l'accent.
+  Risque de collision avec certains `color_hex` de manifestation accepté
+  en connaissance de cause par Xavier (même risque écarté pour le rouge
+  FDV la veille, assumé cette fois pour l'ambre).
+- **Micro-interactions façon Maximus** — `.text-gradient` (dégradé sur
+  le mot accentué du titre du hero), `.animate-pulse-subtle` (halo doux
+  sur le bouton principal, pas l'`animate-pulse` Tailwind par défaut qui
+  évoque un skeleton de chargement), header `sticky` + `backdrop-blur`
+  (glassmorphism, propagé partout via `SiteHeader`), hover
+  scale/rotate sur l'icône du wordmark.
+- **Landing (`src/app/page.tsx`) réorientée bénéfices** — hero recopié
+  avec un titre bénéfice ("Vis les manifestations de l'intérieur"),
+  nouvelle section "avantages" (3 cartes : points, communauté, flexibilité
+  des shifts) avant la liste des manifestations, hover-lift +
+  fade-in en cascade sur les cartes (`tw-animate-css`, déjà importé,
+  aucune nouvelle dépendance).
+- **Logo des organisations** — déjà en place depuis la Phase 3
+  (`manifestations.logo_url`, formulaire `/manage/[id]`) et déjà affiché
+  via `ManifestationAvatar` depuis la passe de la veille. **Aucun
+  travail nécessaire**, vérifié avant de coder quoi que ce soit.
+- **Localisation des shifts + itinéraire Google Maps** — pattern repris
+  à l'identique du projet `atico-pollensa-guide` (pas d'API Google Maps,
+  pas de géocodage) : `shifts.location_name` (texte libre) +
+  `shifts.location_maps_url` (lien de partage Google Maps collé par
+  l'admin), migration `20260702080205_add_shift_location`. Champs
+  ajoutés au formulaire de création (`/manage/[id]/shifts`). **Gap
+  fonctionnel corrigé au passage** : aucune UI d'édition n'existait pour
+  un shift déjà créé (seulement création/suppression) — une adresse ou
+  un lien Maps erroné aurait été corrigible uniquement en supprimant le
+  shift, avec perte des inscriptions déjà faites. Ajout ciblé d'un petit
+  formulaire "Lieu" sur `/manage/[id]/shifts/[shiftId]` (nouvelle action
+  `updateShiftLocation`), sans étendre l'édition aux autres champs du
+  shift (nom/horaires/capacité), hors périmètre de cette demande. Affichage
+  public sur `/manifestations/[id]` : lieu en texte (icône `MapPin`) +
+  bouton "Itinéraire" (icône `ExternalLink`, lien `target="_blank"`) si
+  un lien Maps est renseigné.
+- `get_advisors` (sécurité) lancé après la migration : aucune nouvelle
+  alerte, les deux warnings existants (`create_shift_signup` RPC
+  intentionnellement exposée, protection mot de passe compromis
+  désactivée) sont antérieurs et sans rapport.
+- **Vérifié bout-en-bout** (technique curl habituelle, avec un vrai
+  compte admin et une vraie session) : connexion, création d'un shift
+  avec lieu + lien Maps (vérifié en base), modification du lieu via le
+  nouveau formulaire (vérifié en base), affichage correct du lieu et du
+  bouton Itinéraire sur la page publique. Manifestation de test + secteur
+  + shift + compte admin nettoyés après coup, 0 résidu vérifié par SQL
+  (cascade `ON DELETE` sur `manifestation_id`).
+- Palette : CSS compilé vérifié via `curl` (`--primary: #dc7200` clair /
+  `#f59300` sombre). Rendu visuel réel non vérifiable dans cet
+  environnement (navigateur headless non fonctionnel, déjà confirmé à
+  plusieurs reprises) — **relecture manuelle de Xavier recommandée**,
+  en particulier pour juger si l'ambre choisi convient une fois vu en
+  vrai, et s'il n'entre pas en collision avec une couleur de
+  manifestation existante.
+
 ## 2026-07-01 (suite) — Refonte visuelle (landing + identité graphique)
 
 Demande de Xavier : rendu graphique nettement plus soigné en s'inspirant de

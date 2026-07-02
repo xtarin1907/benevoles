@@ -13,13 +13,13 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import type { Database } from "@/lib/supabase/database.types"
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL
+const PUBLISHABLE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY
 const SECRET_KEY = process.env.SUPABASE_SECRET_KEY
 
 if (!SUPABASE_URL || !PUBLISHABLE_KEY || !SECRET_KEY) {
   throw new Error(
-    "Missing NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY / " +
+    "Missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY / " +
       "SUPABASE_SECRET_KEY in .env.local. SUPABASE_SECRET_KEY must be copied " +
       "manually from the Supabase dashboard (Settings > API) -- it cannot be " +
       "fetched via the Supabase MCP tool.",

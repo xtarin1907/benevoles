@@ -400,6 +400,8 @@ export type Database = {
           description: string | null
           end_at: string
           id: string
+          location_maps_url: string | null
+          location_name: string | null
           manifestation_id: string
           name: string
           secteur_id: string
@@ -412,6 +414,8 @@ export type Database = {
           description?: string | null
           end_at: string
           id?: string
+          location_maps_url?: string | null
+          location_name?: string | null
           manifestation_id: string
           name: string
           secteur_id: string
@@ -424,6 +428,8 @@ export type Database = {
           description?: string | null
           end_at?: string
           id?: string
+          location_maps_url?: string | null
+          location_name?: string | null
           manifestation_id?: string
           name?: string
           secteur_id?: string

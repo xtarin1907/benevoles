@@ -2,7 +2,11 @@
 
 ## Décisions actées (2026-07-01)
 
-- Stack : Next.js + Supabase.
+- Stack : Next.js + Supabase. **Frontend révisé le 2026-07-02 : Vite +
+  React Router**, pour héberger sur Infomaniak à l'identique des autres
+  sites de Xavier (dossier `dist/` statique, upload manuel, `.htaccess`,
+  sans process Node) — voir `architecture.md` §Stack technique et
+  décision ouverte #6 ci-dessous pour le compromis SEO accepté.
 - Multi-tenance : un seul projet Supabase, RLS par manifestation.
 - Le projet repart de zéro (pas de fork d'Economat FDV) ; seul le modèle
   de données sert d'inspiration.
@@ -40,6 +44,18 @@
    une politique de confidentialité) avant la mise en prod de la
    fonctionnalité newsletter — pas un blocage pour le MVP shifts/points,
    mais un blocage pour la phase Newsletter (Phase 7).
+
+6. **SEO de la landing page publique, abandonné avec le passage en SPA
+   statique (2026-07-02).** Le critère qui avait fait choisir Next.js le
+   2026-07-01 n'est plus satisfait : la landing est maintenant rendue
+   entièrement côté client (React Router + fetch Supabase au chargement),
+   donc moins bien indexée par les moteurs de recherche qu'une version
+   server-rendered. Accepté explicitement par Xavier en échange de la
+   parité d'infra avec ses autres sites Infomaniak. À rouvrir seulement si
+   un besoin réel de référencement apparaît (ex. mesure d'acquisition
+   organique insuffisante) — solutions possibles à ce moment-là :
+   prérendu/SSG d'un shell public à publier séparément, ou service de
+   prerendering tiers (à rechercher le moment venu, pas maintenant — YAGNI).
 
 ## Phases
 

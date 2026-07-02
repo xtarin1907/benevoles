@@ -20,7 +20,6 @@ export function ManifestationAvatar({
   const dims = SIZE_CLASSES[size]
 
   if (logoUrl) {
-    // eslint-disable-next-line @next/next/no-img-element
     return <img src={logoUrl} alt="" className={`${dims} shrink-0 rounded-full object-cover`} />
   }
 

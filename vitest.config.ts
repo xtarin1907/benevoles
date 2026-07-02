@@ -9,9 +9,9 @@ export default defineConfig({
     },
   },
   test: {
-    // .env.local is a Next.js convention, not auto-loaded by Vite/Vitest
-    // for process.env -- load it explicitly (third arg "" = no prefix
-    // filter, since these aren't VITE_-prefixed vars).
+    // Vitest doesn't load .env into process.env on its own (only Vite's
+    // import.meta.env) -- load explicitly (third arg "" = no prefix
+    // filter, since SUPABASE_SECRET_KEY isn't VITE_-prefixed).
     env: loadEnv("", process.cwd(), ""),
   },
 })

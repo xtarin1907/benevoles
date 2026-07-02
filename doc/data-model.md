@@ -79,6 +79,8 @@ Repris directement du pattern Economat FDV.
 | `start_at` / `end_at` | timestamptz | |
 | `capacity` | int | nombre de bénévoles requis (= `nb_benevoles_requis` chez Economat FDV) |
 | `description` | text | |
+| `location_name` | text, nullable | ajouté 2026-07-02 — adresse/nom de lieu en texte libre |
+| `location_maps_url` | text, nullable | ajouté 2026-07-02 — lien Google Maps pré-construit collé par l'admin (pattern `atico-pollensa-guide` : pas d'API Google Maps, pas de géocodage) |
 | `created_by` | uuid (FK `profiles.id`) | |
 | `created_at` | timestamptz | |
 

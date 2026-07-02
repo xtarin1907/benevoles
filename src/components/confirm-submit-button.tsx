@@ -1,5 +1,3 @@
-"use client"
-
 import type { ComponentProps, ReactNode } from "react"
 import {
   AlertDialog,
@@ -14,21 +12,15 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 
-// Submits the form with id={formId} via the HTML `form` attribute rather
-// than DOM nesting -- AlertDialogContent renders through a portal, so a
-// submit button nested inside a <form> the usual way would no longer be
-// associated with it once portaled. The `form` attribute resolves by ID
-// at submit time regardless of where the button actually lives in the
-// DOM tree.
 export function ConfirmSubmitButton({
-  formId,
+  onConfirm,
   children,
   title,
   description,
   variant = "outline",
   size = "sm",
 }: {
-  formId: string
+  onConfirm: () => void
   children: ReactNode
   title: string
   description: string
@@ -47,7 +39,7 @@ export function ConfirmSubmitButton({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction type="submit" form={formId} variant="destructive">
+          <AlertDialogAction type="button" onClick={onConfirm} variant="destructive">
             Confirmer
           </AlertDialogAction>
         </AlertDialogFooter>
