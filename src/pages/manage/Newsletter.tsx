@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { ManageSubNav } from "@/components/manage/manage-sub-nav"
 import { createClient } from "@/lib/supabase/client"
 
 type NewsletterSend = {
@@ -36,6 +37,7 @@ export default function NewsletterPage() {
   const { id } = useParams<{ id: string }>()
   const [sends, setSends] = useState<NewsletterSend[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [editionYear, setEditionYear] = useState<number | null>(null)
 
   const fetchSends = useCallback(() => {
     if (!id) return
@@ -48,6 +50,16 @@ export default function NewsletterPage() {
   }, [id])
 
   useEffect(fetchSends, [fetchSends])
+
+  useEffect(() => {
+    if (!id) return
+    createClient()
+      .from("manifestations")
+      .select("series_id, edition_year")
+      .eq("id", id)
+      .single()
+      .then(({ data }) => setEditionYear(data?.series_id ? data.edition_year : null))
+  }, [id])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -76,8 +88,17 @@ export default function NewsletterPage() {
     fetchSends()
   }
 
+  if (!id) return null
+
   return (
     <div className="flex max-w-lg flex-col gap-6">
+      <ManageSubNav manifestationId={id} />
+      {editionYear && (
+        <p className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          Cette newsletter cible uniquement l&apos;édition {editionYear} — les autres éditions
+          de cette série ont leurs propres bénévoles engagés et ne recevront pas cet envoi.
+        </p>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Envoyer une newsletter</CardTitle>

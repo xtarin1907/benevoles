@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, type FormEvent } from "react"
 import { useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { Check, CheckCircle2, Users, X } from "lucide-react"
+import { AlertTriangle, Check, CheckCircle2, UserX, Users, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { ManageSubNav } from "@/components/manage/manage-sub-nav"
 import { createClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
 
@@ -24,6 +25,7 @@ type Signup = {
   id: string
   status: ShiftSignupStatus
   notes: string | null
+  volunteer_id: string
   profiles: { email: string; full_name: string | null } | null
 }
 
@@ -33,6 +35,7 @@ const STATUS_LABELS: Record<string, string> = {
   declined: "Refusé",
   completed: "Effectué",
   no_show: "Absent",
+  waitlisted: "En réserve",
 }
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -41,6 +44,7 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | 
   declined: "destructive",
   completed: "outline",
   no_show: "destructive",
+  waitlisted: "secondary",
 }
 
 export default function ShiftDetailPage() {
@@ -48,6 +52,7 @@ export default function ShiftDetailPage() {
   const [shift, setShift] = useState<Shift | null | undefined>(undefined)
   const [requiresApproval, setRequiresApproval] = useState(false)
   const [signups, setSignups] = useState<Signup[]>([])
+  const [blacklistedIds, setBlacklistedIds] = useState<Set<string>>(new Set())
 
   const fetchData = useCallback(() => {
     if (!id || !shiftId) return
@@ -69,9 +74,14 @@ export default function ShiftDetailPage() {
 
     supabase
       .from("shift_signups")
-      .select("id, status, notes, profiles(email, full_name)")
+      .select("id, status, notes, volunteer_id, profiles(email, full_name)")
       .eq("shift_id", shiftId)
       .then(({ data }) => setSignups(data ?? []))
+
+    supabase
+      .from("volunteer_blacklist")
+      .select("volunteer_id")
+      .then(({ data }) => setBlacklistedIds(new Set(data?.map((b) => b.volunteer_id))))
   }, [id, shiftId])
 
   useEffect(fetchData, [fetchData])
@@ -109,23 +119,32 @@ export default function ShiftDetailPage() {
     fetchData()
   }
 
-  if (!shift) return null
+  if (!shift || !id) return null
 
   const confirmedCount = signups.filter((s) => s.status === "confirmed" || s.status === "completed").length
+  const waitlistedCount = signups.filter((s) => s.status === "waitlisted").length
 
   return (
     <div className="flex max-w-lg flex-col gap-6">
+      <ManageSubNav manifestationId={id} />
       <Card>
         <CardHeader>
           <CardTitle>{shift.name}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-1 text-sm">
           <p><span className="text-muted-foreground">Secteur :</span> {shift.secteurs?.name}</p>
-          <p><span className="text-muted-foreground">Début :</span> {new Date(shift.start_at).toLocaleString("fr-CH")}</p>
-          <p><span className="text-muted-foreground">Fin :</span> {new Date(shift.end_at).toLocaleString("fr-CH")}</p>
+          {shift.start_at && shift.end_at ? (
+            <>
+              <p><span className="text-muted-foreground">Début :</span> {new Date(shift.start_at).toLocaleString("fr-CH")}</p>
+              <p><span className="text-muted-foreground">Fin :</span> {new Date(shift.end_at).toLocaleString("fr-CH")}</p>
+            </>
+          ) : (
+            <p><span className="text-muted-foreground">Horaire :</span> Poste ouvert (pas d&apos;horaire fixe)</p>
+          )}
           <p className="flex items-center gap-1.5">
             <Users className="size-3.5 text-muted-foreground" />
             <span className="text-muted-foreground">Capacité :</span> {confirmedCount} / {shift.capacity}
+            {waitlistedCount > 0 && ` (+ ${waitlistedCount} en réserve)`}
           </p>
           {shift.description && <p className="mt-2">{shift.description}</p>}
         </CardContent>
@@ -181,7 +200,15 @@ export default function ShiftDetailPage() {
                 {signups.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell className="whitespace-nowrap">
-                      {s.profiles?.full_name ?? s.profiles?.email}
+                      <span className="flex items-center gap-1.5">
+                        {s.profiles?.full_name ?? s.profiles?.email}
+                        {blacklistedIds.has(s.volunteer_id) && (
+                          <AlertTriangle
+                            className="size-3.5 text-destructive"
+                            aria-label="Bénévole dans la liste noire"
+                          />
+                        )}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={STATUS_VARIANTS[s.status] ?? "secondary"}>
@@ -205,13 +232,28 @@ export default function ShiftDetailPage() {
                         </>
                       )}
                       {s.status === "confirmed" && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateSignupStatus(s.id, "completed")}
-                        >
-                          <CheckCircle2 /> Marquer effectué
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateSignupStatus(s.id, "completed")}
+                          >
+                            <CheckCircle2 /> Marquer effectué
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateSignupStatus(s.id, "no_show")}
+                          >
+                            <UserX /> Marquer absent
+                          </Button>
+                        </>
+                      )}
+                      {s.status === "waitlisted" && (
+                        <Button type="button" size="sm" onClick={() => updateSignupStatus(s.id, "confirmed")}>
+                          <Check /> Confirmer (place libérée)
                         </Button>
                       )}
                     </TableCell>

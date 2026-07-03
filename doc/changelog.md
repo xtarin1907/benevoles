@@ -3,6 +3,270 @@
 Journal chronologique des décisions actées et évolutions du projet
 (plus récent en premier).
 
+## 2026-07-03 (suite) — Bug de la page blanche au clic sur l'avatar : cause confirmée et corrigée
+
+L'Error Boundary ajoutée la veille (voir entrée du dessous) a fait son
+travail : au lieu d'une page blanche silencieuse, Xavier a pu voir et
+transmettre le message d'erreur réel — "Base UI error #31 ;
+MenuGroupContext is missing. Menu group parts must be used within
+`<Menu.Group>` ou `<Menu.RadioGroup>`." Cause trouvée en récupérant le
+mapping des codes d'erreur Base UI (`docs/src/error-codes.json` du dépôt
+`mui/base-ui`, non exposé publiquement sur le site) : `DropdownMenuLabel`
+(`src/components/ui/dropdown-menu.tsx`) rend `Menu.GroupLabel`, qui exige
+d'être dans un `Menu.Group` — contrairement à l'équivalent Radix
+d'origine. Le composant généré par le CLI shadcn ne le fait pas
+automatiquement, et `site-header.tsx` utilisait `DropdownMenuLabel`
+directement dans le menu déroulant du compte (email de l'utilisateur),
+sans wrapper `Group` — chaque clic sur l'avatar plantait donc tout
+l'arbre React à l'ouverture du menu. Corrigé à la source dans
+`DropdownMenuLabel` (l'enveloppe dans son propre `Menu.Group` en
+interne, `Group` n'a aucun style par défaut donc aucun changement visuel)
+plutôt que d'ajouter un wrapper à chaque site d'appel — protège aussi tout
+usage futur du composant. Seul site d'appel dans le projet à ce jour :
+`site-header.tsx`.
+
+## 2026-07-03 — Liste noire des bénévoles (no-show / départ anticipé)
+
+Demande de Xavier : pouvoir signaler les bénévoles staff no-show ou
+partis avant la fin, avec des commentaires. Décisions tranchées avec lui
+(AskUserQuestion) : **liste noire partagée entre organisateurs**
+(dérogation explicite et assumée à l'isolation stricte par manifestation
+— documentée dans `roadmap.md` Décision #9, pas un oubli) ; **signal
+visuel uniquement**, aucun blocage automatique à l'inscription.
+
+- Trou comblé au passage : `no_show` existait déjà dans l'enum
+  `shift_signup_status` mais aucun bouton ne permettait de le poser —
+  ajouté sur `/manage/:id/shifts/:shiftId` ("Marquer absent", pour les
+  inscriptions `confirmed`).
+- Nouvelle table `volunteer_blacklist` (bénévole, manifestation à
+  l'origine, motif, auteur, date) — append-only façon `points_ledger`
+  (plusieurs entrées possibles par bénévole, pas un booléen). RLS :
+  lecture par tout admin de manifestation ou super_admin (jamais un
+  bénévole simple), écriture par l'admin de la manifestation renseignée,
+  suppression réservée à la manifestation à l'origine du signalement.
+  Vérifié bout-en-bout : un admin B voit bien l'entrée créée par
+  l'admin A (partage voulu) mais ne peut pas la supprimer ; un bénévole
+  simple ne voit rien.
+- Nouvelle page partagée `/manage/blacklist` (accessible à tout admin de
+  manifestation ou super_admin) : liste complète + formulaire d'ajout
+  (recherche par email) + suppression scopée par la policy RLS. Ajoutée
+  aux `navItems` de `ManageLayout` ("Liste noire").
+- Badge d'avertissement (icône) sur `/manage/:id/volunteers` (+ bouton
+  "Blacklister" par ligne, via un `Dialog`), `/admin/volunteers`, et la
+  table des inscriptions de `/manage/:id/shifts/:shiftId`.
+
+## 2026-07-02 (suite) — Error Boundary, ticker landing, page partenaires
+
+**Error Boundary global** — `main.tsx` n'avait aucun React Error
+Boundary : la moindre exception non interceptée (y compris dans un
+composant monté paresseusement dans un Portal, comme le contenu d'un
+menu déroulant) faisait disparaître tout l'arbre React et laissait une
+page blanche silencieuse. C'est l'explication la plus probable au bug
+rapporté par Xavier ("je clique sur mon nom en haut à droite, j'arrive
+sur une page blanche"), sans certitude absolue faute de navigateur pour
+reproduire dans cet environnement. `src/components/error-boundary.tsx`
+ajouté autour de `<App />` — affiche désormais un message d'erreur +
+bouton "Recharger" et logge l'erreur en console au lieu d'un écran vide.
+Complété par trois correctifs UX identifiés en explorant le flux
+connexion/déconnexion : redirection automatique hors de `/login` et
+`/signup` si déjà connecté, toast de confirmation/erreur sur
+déconnexion (`site-header.tsx`, `lib/auth/actions.ts`).
+
+**Bandeau "cherche des bénévoles" en ticker défilant** — passait
+inaperçu selon Xavier. Transformé en défilement continu droite→gauche
+(`@keyframes marquee` dans `globals.css`, technique du contenu dupliqué
+une fois pour une boucle sans saut visuel), fond `bg-primary` plus
+visible, pause au survol, désactivé si `prefers-reduced-motion`
+(accessibilité).
+
+**Page "Nos partenaires"** — nouvelle table `partners` (nom, logo,
+site web optionnel, ordre d'affichage), RLS lecture publique / écriture
+super_admin, bucket Storage `partner-logos` (même pattern que
+`manifestation-logos`, sans policy `SELECT` superflue — leçon retenue
+de `get_advisors` sur ce bucket). Page publique `/partenaires` (grille
+de logos reprenant le style de la page "qui sommes-nous" de Maximus
+Discotecus), gestion admin `/admin/partners`, lien discret depuis le
+hero de la landing à côté du lien organisateurs.
+
+## 2026-07-02 (suite) — Vague de fonctionnalités : panier de shifts, staffing par postes, série/édition, création organisateur, rappels SMS
+
+Grande vague de demandes de Xavier après la migration Vite. Chaque
+sous-section correspond à une décision tranchée avec lui (AskUserQuestion)
+avant codage — détail complet dans le plan de session
+`~/.claude/plans/splendid-beaming-manatee.md`. Toutes les fonctionnalités
+listées ici sont **vérifiées bout-en-bout** (compte de test jetable, RLS
+réelle, 0 résidu confirmé par SQL après nettoyage), sauf mention contraire.
+
+**Profil bénévole + confirmation mot de passe** — `profiles` gagne
+`date_of_birth` (nullable), `tshirt_size` (enum), `address`. Formulaire
+`/signup` : champs ajoutés + double-saisie du mot de passe vérifiée côté
+client avant soumission. Éditables ensuite sur `/dashboard`.
+
+**Upload de logo** — bucket Storage `manifestation-logos` (lecture
+publique, écriture réservée aux admins de la manifestation), remplace le
+champ `logo_url` en simple URL par un vrai upload de fichier sur
+`/manage/:id`.
+
+**Polices "Maximus discotecus"** — Source Sans/Serif/Code Pro via Google
+Fonts, remplacent Geist Sans/Mono.
+
+**Navigation** — badge de zone dans `SiteHeader` (Espace bénévole /
+Gestion manifestation / Super admin) pour clarifier "dans quel espace je
+suis" (c'était un problème de repère visuel, pas de permissions — décision
+tranchée avec Xavier). `ManageSubNav` : sous-nav Branding/Secteurs/
+Shifts/Bénévoles/Newsletter/Rappels extraite en composant partagé avec
+navigation prev/next, remplace une sous-nav dupliquée/codée en dur qui
+n'existait que sur une seule page.
+
+**Vue bénévoles** — colonne "Manifestations" sur `/admin/volunteers`
+(super_admin) ; nouvelle page `/manage/:id/volunteers` pour l'admin d'une
+manifestation précise.
+
+**Lieu dans l'historique bénévole** — `location_name` affiché sur
+`/dashboard/signups` en plus du nom du shift.
+
+**Modèle série/édition** — nouvelle table `manifestation_series` (`id`,
+`name`) ; `manifestations` gagne `series_id` (FK nullable) et
+`edition_year`. Permet à un même événement récurrent (ex. "Fête des
+Vendanges de Lutry") d'avoir plusieurs éditions annuelles, chacune une
+ligne `manifestations` complète et indépendante (secteurs/shifts/points
+propres), sans restructurer le modèle existant. `/admin/manifestations/new`
+gagne "Nouvelle édition de..." : préremplit couleur/logo/mode et **clone
+les admins** de l'édition source (pas les secteurs/shifts, trop
+spécifiques à la date). `manifestations` gagne aussi `website_url` et
+`contact_email` (nullables, affichés sur la landing).
+
+**Annulation self-service d'un shift** — décision Xavier : logique
+"panier d'achat", pas de flux fusionné annuler+réinscrire. Bouton
+"Annuler mon inscription" sur `/dashboard/signups` pour les statuts
+`applied`/`confirmed`/`waitlisted` (`update({status: 'declined'})` sur sa
+propre ligne). RLS déjà permissive, aucune migration nécessaire. Pas de
+retrait de points déjà attribués (`points_ledger` append-only par
+conception, YAGNI si ça devient un vrai problème).
+
+**Notification email au responsable des bénévoles** — `manifestations`
+gagne `coordinator_name`/`coordinator_email`/`coordinator_phone`
+(nullables, le téléphone anticipant un futur SMS). Nouvelle Edge Function
+`notify-coordinator` (Resend), appelée après chaque création/annulation de
+signup. No-op silencieux si `coordinator_email` n'est pas renseigné (champ
+optionnel, pas un pré-requis). **Bug RLS réel trouvé et corrigé en
+vérifiant** : le join PostgREST `shift_signups → shifts → manifestations`
+retournait `null` pour le propriétaire légitime de l'inscription si la
+manifestation n'était pas publiée (la policy publique de lecture de
+`shifts` exige `is_published = true`, et s'applique indépendamment de la
+policy sur `shift_signups`). Corrigé en séparant l'autorisation (lecture
+minimale via le client RLS-scopé de l'appelant) de la lecture des détails
+(via `service_role`, après autorisation confirmée).
+
+**Mode "postes" (staffing par quantité, sans horaire)** — `manifestations.
+staffing_mode` et `secteurs.staffing_mode` (nullable, hérite du niveau
+manifestation si vide — décision Xavier : les deux niveaux, pas l'un ou
+l'autre). `shifts.start_at`/`end_at` passent `NOT NULL` → nullable : un
+"poste" est simplement un shift sans dates, réutilisant tel quel
+`shift_signups`/`create_shift_signup()`/le trigger de points — aucune
+table parallèle. Page Secteurs affiche un champ "Bénévoles nécessaires"
+en mode postes ; page Shifts classique réservée au mode "shifts". Tous
+les affichages supposant `start_at` non nul corrigés (tri
+`nullsFirst`, badge "Poste ouvert").
+
+**Bénévoles de réserve (waitlist)** — `shift_signup_status` gagne
+`'waitlisted'` (migration séparée de celle qui l'utilise — contrainte
+Postgres sur les nouvelles valeurs d'enum). `create_shift_signup()`
+modifiée : capacité atteinte → statut `waitlisted` au lieu d'une erreur
+"shift is full". Promotion **manuelle uniquement** (décision Xavier) :
+bouton "Confirmer" sur `/manage/:id/shifts/:shiftId` pour les
+inscriptions en réserve.
+
+**Landing page reconstruite** — grille 4 colonnes (`grid-cols-2
+sm:grid-cols-4`), une carte par **série** (regroupement client-side :
+édition à venir la plus proche, sinon la plus récente passée — répond à
+"afficher la date, ou celle du prochain événement s'il y en a plusieurs
+par an"). Clic sur la carte → popup (site web, email de contact,
+description) — "aperçu seul", décision Xavier : les boutons S'engager/
+Voir les shifts restent sur la carte, hors du popup. Nouveau bandeau
+"Cherchent encore des bénévoles" au-dessus de la grille, alimenté par une
+nouvelle fonction `manifestations_seeking_volunteers()` (`SECURITY
+DEFINER`, exposée à `anon` **et** `authenticated` — exception délibérée
+au pattern habituel de ce projet qui retire l'accès `anon` par défaut ;
+ne renvoie qu'un agrégat booléen par manifestation, aucune identité de
+bénévole).
+
+**Rappel d'édition sur la newsletter** — `/manage/:id/newsletter` affiche
+un bandeau "Cette newsletter cible uniquement l'édition [année]" quand la
+manifestation appartient à une série, pour éviter la confusion avec les
+autres éditions. Aucun nouveau scope de ciblage nécessaire (le scope
+`manifestation_engagé` existant fonctionne déjà par édition, chaque
+édition étant une `manifestation_id` distincte).
+
+**Auto-création de manifestation par un organisateur + validation
+super_admin** — décision Xavier : ouverture en libre-service, mais mise
+en ligne bloquée tant que le groupement n'a pas validé. `manifestations`
+gagne `approval_status` (enum `pending`/`approved`/`rejected`, défaut
+`approved` pour les lignes existantes créées par le super_admin). Policy
+INSERT dédiée pour un utilisateur lambda (restreinte à `pending` +
+`is_published=false`) + trigger de garde `BEFORE INSERT OR UPDATE`
+empêchant la publication avant validation même via la policy UPDATE des
+admins de manifestation. Nouvelle route `/manage/new` (accessible à tout
+utilisateur connecté). `/admin/manifestations` gagne les actions
+Approuver/Refuser. **Deux bugs RLS réels trouvés et corrigés en
+vérifiant** : (1) le créateur n'avait aucune policy `SELECT` pour voir sa
+propre manifestation fraîchement créée (ni publiée, ni encore dans
+`manifestation_admins`) — un `insert().select()` échoue sous RLS si la
+ligne insérée n'est visible par aucune policy `SELECT`, même quand
+l'`INSERT` lui-même est autorisé ; corrigé par une policy "le créateur
+peut voir sa propre manifestation" (`created_by = auth.uid()`). (2)
+`manifestation_admins` n'avait aucune policy permettant à ce créateur de
+s'auto-insérer comme premier `owner` — la policy existante l'exigeait déjà
+`owner` (circulaire pour la toute première ligne). Le premier correctif
+tenté (sous-requête `NOT EXISTS` inline sur `manifestation_admins` dans sa
+propre policy) provoquait une récursion RLS infinie ; corrigé en déplaçant
+la vérification dans une fonction `SECURITY DEFINER`
+(`private.can_bootstrap_manifestation_admin`), même pattern que les
+fonctions `is_manifestation_admin`/`is_manifestation_owner` déjà en place.
+
+**Page `/organisateurs`** — landing bénévoles (`/`) confirmée prioritaire
+par Xavier, pas scindée davantage. Nouvelle page d'information courte
+pour les organisateurs avec CTA "Créer ma manifestation" (→ `/manage/new`
+si connecté, `/signup?next=/manage/new` sinon), liée discrètement depuis
+le hero de `/`.
+
+**Rappels SMS aux bénévoles (Twilio)** — nouvelles tables
+`manifestation_reminder_settings` (`send_mode` automatique/manuel,
+`sms_enabled`), `reminder_rules` (offset en minutes + texte librement
+modifiable, deux règles par défaut J-1/H-1 créées automatiquement à
+l'activation), `reminder_sends` (log d'audit + idempotence,
+`UNIQUE(shift_signup_id, reminder_rule_id)`). Edge Function
+`send-reminders`, appelée soit par `pg_cron` (toutes les 5 min, sweep
+automatique) soit par un admin via le bouton "Envoyer maintenant" (mode
+manuel). `pg_cron`/`pg_net` activés sur le projet et installés dans le
+schéma `extensions` (pas `public`, corrigé après un avertissement
+`get_advisors`) ; URL de la fonction et clé `service_role` stockées dans
+Supabase Vault, jamais en clair dans une migration. **Décision Xavier
+2026-07-02** : ne pas attendre le module payant complet (voir
+ci-dessous) pour construire cette fonctionnalité — `sms_enabled` est un
+simple interrupteur par manifestation, activable uniquement par un
+super_admin (trigger de garde), en attendant une vraie grille tarifaire.
+Vérifié bout-en-bout au niveau logique DB/RLS/fenêtre de correspondance
+(fenêtre glissante de 5 min autour de l'offset de chaque règle,
+idempotence, gating `sms_enabled`, blocage RLS d'un non-admin) — **l'envoi
+Twilio réel n'est pas testé**, faute d'identifiants Twilio de Xavier ; la
+fonction le signale explicitement (`skippedNotConfigured` dans la
+réponse) plutôt que d'échouer silencieusement ou de prétendre avoir
+envoyé.
+
+**Module payant — plan uniquement, aucune implémentation** — Xavier a
+demandé de préparer un système d'abonnement "exactement comme l'app
+To-do" avant de rendre payantes les fonctionnalités SMS. Recherche menée
+sur `/Users/xaviertarin/myCloud/TECHNIQUE/To-do` (Stripe Billing,
+`subscriptions` par organisation, 3 Edge Functions + webhook, gating
+applicatif pas RLS). Décisions tranchées avec Xavier : système à paliers
+multiples dès maintenant (pas un simple add-on), facturation par compte
+organisateur. Implique un nouveau concept structurant (`organizations`/
+`organization_members`) qui n'existe pas encore dans Bénévoles+. Prix,
+paliers et cadence de facturation (mensuelle/annuelle) explicitement
+**non tranchés** — seul le plan d'architecture est livré, l'implémentation
+attend la décision de Xavier (voir `roadmap.md` §Décisions ouvertes).
+
 ## 2026-07-02 (suite) — Migration Next.js → Vite + React Router
 
 Demande de Xavier : héberger sur Infomaniak à l'identique de ses autres

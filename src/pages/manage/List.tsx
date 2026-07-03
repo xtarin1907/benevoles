@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
+import { Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ManifestationAvatar } from "@/components/manifestation-avatar"
 import { createClient } from "@/lib/supabase/client"
@@ -36,7 +38,12 @@ export default function ManagePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Mes manifestations</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-xl font-semibold">Mes manifestations</h1>
+        <Button size="sm" render={<Link to="/manage/new" />}>
+          <Plus /> Créer ma manifestation
+        </Button>
+      </div>
       <div className="flex flex-col gap-3">
         {manifestations?.map((m) => (
           <Link key={m.id} to={`/manage/${m.id}`}>
@@ -50,9 +57,13 @@ export default function ManagePage() {
                     <ManifestationAvatar name={m.name} colorHex={m.color_hex} logoUrl={m.logo_url} size="sm" />
                     <CardTitle className="text-base">{m.name}</CardTitle>
                   </div>
-                  <Badge variant={m.is_published ? "default" : "secondary"}>
-                    {m.is_published ? "Publiée" : "Brouillon"}
-                  </Badge>
+                  <div className="flex gap-1.5">
+                    {m.approval_status === "pending" && <Badge variant="secondary">En attente de validation</Badge>}
+                    {m.approval_status === "rejected" && <Badge variant="destructive">Refusée</Badge>}
+                    <Badge variant={m.is_published ? "default" : "secondary"}>
+                      {m.is_published ? "Publiée" : "Brouillon"}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               {m.description && (

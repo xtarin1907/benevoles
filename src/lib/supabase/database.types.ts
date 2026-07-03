@@ -89,48 +89,122 @@ export type Database = {
           },
         ]
       }
+      manifestation_reminder_settings: {
+        Row: {
+          created_at: string
+          manifestation_id: string
+          send_mode: Database["public"]["Enums"]["reminder_send_mode"]
+          sms_enabled: boolean
+        }
+        Insert: {
+          created_at?: string
+          manifestation_id: string
+          send_mode?: Database["public"]["Enums"]["reminder_send_mode"]
+          sms_enabled?: boolean
+        }
+        Update: {
+          created_at?: string
+          manifestation_id?: string
+          send_mode?: Database["public"]["Enums"]["reminder_send_mode"]
+          sms_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manifestation_reminder_settings_manifestation_id_fkey"
+            columns: ["manifestation_id"]
+            isOneToOne: true
+            referencedRelation: "manifestations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manifestation_series: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       manifestations: {
         Row: {
+          approval_status: Database["public"]["Enums"]["manifestation_approval_status"]
           color_hex: string
+          contact_email: string | null
+          coordinator_email: string | null
+          coordinator_name: string | null
+          coordinator_phone: string | null
           created_at: string
           created_by: string | null
           description: string | null
+          edition_year: number | null
           end_date: string | null
           id: string
           is_published: boolean
           logo_url: string | null
           name: string
+          series_id: string | null
           shift_signup_mode: Database["public"]["Enums"]["shift_signup_mode"]
           slug: string
+          staffing_mode: Database["public"]["Enums"]["staffing_mode"]
           start_date: string | null
+          website_url: string | null
         }
         Insert: {
+          approval_status?: Database["public"]["Enums"]["manifestation_approval_status"]
           color_hex?: string
+          contact_email?: string | null
+          coordinator_email?: string | null
+          coordinator_name?: string | null
+          coordinator_phone?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          edition_year?: number | null
           end_date?: string | null
           id?: string
           is_published?: boolean
           logo_url?: string | null
           name: string
+          series_id?: string | null
           shift_signup_mode?: Database["public"]["Enums"]["shift_signup_mode"]
           slug: string
+          staffing_mode?: Database["public"]["Enums"]["staffing_mode"]
           start_date?: string | null
+          website_url?: string | null
         }
         Update: {
+          approval_status?: Database["public"]["Enums"]["manifestation_approval_status"]
           color_hex?: string
+          contact_email?: string | null
+          coordinator_email?: string | null
+          coordinator_name?: string | null
+          coordinator_phone?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          edition_year?: number | null
           end_date?: string | null
           id?: string
           is_published?: boolean
           logo_url?: string | null
           name?: string
+          series_id?: string | null
           shift_signup_mode?: Database["public"]["Enums"]["shift_signup_mode"]
           slug?: string
+          staffing_mode?: Database["public"]["Enums"]["staffing_mode"]
           start_date?: string | null
+          website_url?: string | null
         }
         Relationships: [
           {
@@ -138,6 +212,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manifestations_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "manifestation_series"
             referencedColumns: ["id"]
           },
         ]
@@ -189,6 +270,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      partners: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          order: number
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          order?: number
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          order?: number
+          website_url?: string | null
+        }
+        Relationships: []
       }
       platform_settings: {
         Row: {
@@ -278,8 +386,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
           created_at: string
+          date_of_birth: string | null
           email: string
           full_name: string | null
           id: string
@@ -287,10 +397,13 @@ export type Database = {
           newsletter_consent_at: string | null
           phone: string | null
           platform_role: Database["public"]["Enums"]["app_role"]
+          tshirt_size: Database["public"]["Enums"]["tshirt_size"] | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email: string
           full_name?: string | null
           id: string
@@ -298,10 +411,13 @@ export type Database = {
           newsletter_consent_at?: string | null
           phone?: string | null
           platform_role?: Database["public"]["Enums"]["app_role"]
+          tshirt_size?: Database["public"]["Enums"]["tshirt_size"] | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string
           full_name?: string | null
           id?: string
@@ -309,8 +425,87 @@ export type Database = {
           newsletter_consent_at?: string | null
           phone?: string | null
           platform_role?: Database["public"]["Enums"]["app_role"]
+          tshirt_size?: Database["public"]["Enums"]["tshirt_size"] | null
         }
         Relationships: []
+      }
+      reminder_rules: {
+        Row: {
+          created_at: string
+          id: string
+          manifestation_id: string
+          message_template: string
+          offset_minutes: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manifestation_id: string
+          message_template: string
+          offset_minutes: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manifestation_id?: string
+          message_template?: string
+          offset_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_rules_manifestation_id_fkey"
+            columns: ["manifestation_id"]
+            isOneToOne: false
+            referencedRelation: "manifestations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminder_sends: {
+        Row: {
+          id: string
+          manifestation_id: string
+          reminder_rule_id: string
+          sent_at: string
+          shift_signup_id: string
+        }
+        Insert: {
+          id?: string
+          manifestation_id: string
+          reminder_rule_id: string
+          sent_at?: string
+          shift_signup_id: string
+        }
+        Update: {
+          id?: string
+          manifestation_id?: string
+          reminder_rule_id?: string
+          sent_at?: string
+          shift_signup_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_sends_manifestation_id_fkey"
+            columns: ["manifestation_id"]
+            isOneToOne: false
+            referencedRelation: "manifestations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_sends_reminder_rule_id_fkey"
+            columns: ["reminder_rule_id"]
+            isOneToOne: false
+            referencedRelation: "reminder_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_sends_shift_signup_id_fkey"
+            columns: ["shift_signup_id"]
+            isOneToOne: false
+            referencedRelation: "shift_signups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       secteurs: {
         Row: {
@@ -321,6 +516,7 @@ export type Database = {
           manifestation_id: string
           name: string
           order: number
+          staffing_mode: Database["public"]["Enums"]["staffing_mode"] | null
         }
         Insert: {
           color_hex?: string | null
@@ -330,6 +526,7 @@ export type Database = {
           manifestation_id: string
           name: string
           order?: number
+          staffing_mode?: Database["public"]["Enums"]["staffing_mode"] | null
         }
         Update: {
           color_hex?: string | null
@@ -339,6 +536,7 @@ export type Database = {
           manifestation_id?: string
           name?: string
           order?: number
+          staffing_mode?: Database["public"]["Enums"]["staffing_mode"] | null
         }
         Relationships: [
           {
@@ -398,42 +596,42 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
-          end_at: string
+          end_at: string | null
           id: string
           location_maps_url: string | null
           location_name: string | null
           manifestation_id: string
           name: string
           secteur_id: string
-          start_at: string
+          start_at: string | null
         }
         Insert: {
           capacity: number
           created_at?: string
           created_by?: string | null
           description?: string | null
-          end_at: string
+          end_at?: string | null
           id?: string
           location_maps_url?: string | null
           location_name?: string | null
           manifestation_id: string
           name: string
           secteur_id: string
-          start_at: string
+          start_at?: string | null
         }
         Update: {
           capacity?: number
           created_at?: string
           created_by?: string | null
           description?: string | null
-          end_at?: string
+          end_at?: string | null
           id?: string
           location_maps_url?: string | null
           location_name?: string | null
           manifestation_id?: string
           name?: string
           secteur_id?: string
-          start_at?: string
+          start_at?: string | null
         }
         Relationships: [
           {
@@ -455,6 +653,55 @@ export type Database = {
             columns: ["secteur_id"]
             isOneToOne: false
             referencedRelation: "secteurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      volunteer_blacklist: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          manifestation_id: string
+          reason: string
+          volunteer_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          manifestation_id: string
+          reason: string
+          volunteer_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          manifestation_id?: string
+          reason?: string
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_blacklist_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_blacklist_manifestation_id_fkey"
+            columns: ["manifestation_id"]
+            isOneToOne: false
+            referencedRelation: "manifestations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_blacklist_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -481,13 +728,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      manifestations_seeking_volunteers: {
+        Args: never
+        Returns: {
+          manifestation_id: string
+          name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "super_admin" | "user"
       engagement_status: "interested" | "active" | "withdrawn"
       manifestation_admin_role: "owner" | "admin"
+      manifestation_approval_status: "pending" | "approved" | "rejected"
       newsletter_audience_scope: "all_platform" | "manifestation_engaged"
       points_event_type: "signup" | "shift_completed" | "manual_adjustment"
+      reminder_send_mode: "automatic" | "manual"
       shift_signup_mode: "auto_confirm" | "admin_approval"
       shift_signup_status:
         | "applied"
@@ -495,6 +751,9 @@ export type Database = {
         | "declined"
         | "completed"
         | "no_show"
+        | "waitlisted"
+      staffing_mode: "shifts" | "postes"
+      tshirt_size: "XS" | "S" | "M" | "L" | "XL" | "XXL"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -625,8 +884,10 @@ export const Constants = {
       app_role: ["super_admin", "user"],
       engagement_status: ["interested", "active", "withdrawn"],
       manifestation_admin_role: ["owner", "admin"],
+      manifestation_approval_status: ["pending", "approved", "rejected"],
       newsletter_audience_scope: ["all_platform", "manifestation_engaged"],
       points_event_type: ["signup", "shift_completed", "manual_adjustment"],
+      reminder_send_mode: ["automatic", "manual"],
       shift_signup_mode: ["auto_confirm", "admin_approval"],
       shift_signup_status: [
         "applied",
@@ -634,7 +895,10 @@ export const Constants = {
         "declined",
         "completed",
         "no_show",
+        "waitlisted",
       ],
+      staffing_mode: ["shifts", "postes"],
+      tshirt_size: ["XS", "S", "M", "L", "XL", "XXL"],
     },
   },
 } as const

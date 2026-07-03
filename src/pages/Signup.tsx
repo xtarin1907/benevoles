@@ -1,34 +1,70 @@
 import { useState, type FormEvent } from "react"
-import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
+import { safeNext } from "@/lib/auth/safe-next"
+import { useAuth } from "@/contexts/AuthContext"
+
+const TSHIRT_SIZES = ["XS", "S", "M", "L", "XL", "XXL"] as const
 
 export default function SignupPage() {
   const navigate = useNavigate()
+  const { user, loading } = useAuth()
   const [searchParams] = useSearchParams()
   const next = searchParams.get("next")
   const [submitting, setSubmitting] = useState(false)
+
+  if (!loading && user) {
+    return <Navigate to={safeNext(next)} replace />
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     const email = formData.get("email") as string
     const password = formData.get("password") as string
+    const passwordConfirm = formData.get("passwordConfirm") as string
     const fullName = formData.get("fullName") as string
+    const phone = formData.get("phone") as string
+    const address = formData.get("address") as string
+    const tshirtSize = formData.get("tshirtSize") as string
+    const dateOfBirth = formData.get("dateOfBirth") as string
     const newsletterConsent = formData.get("newsletterConsent") === "on"
+
+    if (password !== passwordConfirm) {
+      toast.error("Les deux mots de passe ne correspondent pas.")
+      return
+    }
 
     setSubmitting(true)
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      // Read by handle_new_user() to seed profiles.newsletter_consent --
-      // explicit opt-in, unchecked by default (CLAUDE.md non-négociable).
-      options: { data: { full_name: fullName, newsletter_consent: newsletterConsent } },
+      // Read by handle_new_user() to seed the matching profiles columns --
+      // newsletter_consent is an explicit opt-in, unchecked by default
+      // (CLAUDE.md non-négociable).
+      options: {
+        data: {
+          full_name: fullName,
+          phone,
+          address,
+          tshirt_size: tshirtSize || null,
+          date_of_birth: dateOfBirth || null,
+          newsletter_consent: newsletterConsent,
+        },
+      },
     })
     setSubmitting(false)
 
@@ -46,7 +82,7 @@ export default function SignupPage() {
       <Link to="/" className="text-lg font-semibold">
         Bénévoles+
       </Link>
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Créer un compte bénévole</CardTitle>
         </CardHeader>
@@ -61,10 +97,50 @@ export default function SignupPage() {
               <Input id="email" name="email" type="email" required autoComplete="email" />
             </div>
             <div className="flex flex-col gap-2">
+              <Label htmlFor="phone">Téléphone</Label>
+              <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="address">Adresse</Label>
+              <Input id="address" name="address" required autoComplete="street-address" />
+            </div>
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="flex flex-1 flex-col gap-2">
+                <Label htmlFor="tshirtSize">Taille de t-shirt</Label>
+                <Select name="tshirtSize" required>
+                  <SelectTrigger id="tshirtSize">
+                    <SelectValue placeholder="Choisir..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TSHIRT_SIZES.map((size) => (
+                      <SelectItem key={size} value={size}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-1 flex-col gap-2">
+                <Label htmlFor="dateOfBirth">Date de naissance (optionnel)</Label>
+                <Input id="dateOfBirth" name="dateOfBirth" type="date" autoComplete="bday" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
               <Label htmlFor="password">Mot de passe</Label>
               <Input
                 id="password"
                 name="password"
+                type="password"
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="passwordConfirm">Confirmer le mot de passe</Label>
+              <Input
+                id="passwordConfirm"
+                name="passwordConfirm"
                 type="password"
                 required
                 minLength={6}

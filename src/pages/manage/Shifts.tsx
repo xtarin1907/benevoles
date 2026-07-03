@@ -23,14 +23,17 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button"
+import { ManageSubNav } from "@/components/manage/manage-sub-nav"
 import { createClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
 
-type Secteur = Pick<Database["public"]["Tables"]["secteurs"]["Row"], "id" | "name">
+type StaffingMode = Database["public"]["Enums"]["staffing_mode"]
+type Secteur = Pick<Database["public"]["Tables"]["secteurs"]["Row"], "id" | "name" | "staffing_mode">
 type Shift = Database["public"]["Tables"]["shifts"]["Row"] & { secteurs: { name: string } | null }
 
 export default function ShiftsPage() {
   const { id } = useParams<{ id: string }>()
+  const [manifestationStaffingMode, setManifestationStaffingMode] = useState<StaffingMode>("shifts")
   const [secteurs, setSecteurs] = useState<Secteur[]>([])
   const [shifts, setShifts] = useState<Shift[]>([])
 
@@ -38,8 +41,14 @@ export default function ShiftsPage() {
     if (!id) return
     const supabase = createClient()
     supabase
+      .from("manifestations")
+      .select("staffing_mode")
+      .eq("id", id)
+      .single()
+      .then(({ data }) => setManifestationStaffingMode(data?.staffing_mode ?? "shifts"))
+    supabase
       .from("secteurs")
-      .select("id, name")
+      .select("id, name, staffing_mode")
       .eq("manifestation_id", id)
       .order("order", { ascending: true })
       .then(({ data }) => setSecteurs(data ?? []))
@@ -47,11 +56,20 @@ export default function ShiftsPage() {
       .from("shifts")
       .select("*, secteurs(name)")
       .eq("manifestation_id", id)
-      .order("start_at", { ascending: true })
+      .order("start_at", { ascending: true, nullsFirst: false })
       .then(({ data }) => setShifts(data ?? []))
   }, [id])
 
   useEffect(fetchData, [fetchData])
+
+  // Secteurs in "postes" mode are managed directly on the Secteurs page
+  // (a single headcount-only shift, no date) -- this page stays reserved
+  // for secteurs using dated shifts, to avoid managing the same thing two ways.
+  const shiftModeSecteurs = secteurs.filter((s) => (s.staffing_mode ?? manifestationStaffingMode) === "shifts")
+  const posteSecteurIds = new Set(
+    secteurs.filter((s) => (s.staffing_mode ?? manifestationStaffingMode) === "postes").map((s) => s.id),
+  )
+  const displayedShifts = shifts.filter((s) => !posteSecteurIds.has(s.secteur_id))
 
   async function handleCreate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -90,8 +108,11 @@ export default function ShiftsPage() {
     fetchData()
   }
 
+  if (!id) return null
+
   return (
     <div className="flex max-w-lg flex-col gap-6">
+      <ManageSubNav manifestationId={id} />
       <h1 className="text-xl font-semibold">Shifts</h1>
 
       <div className="overflow-x-auto rounded-lg border">
@@ -106,7 +127,7 @@ export default function ShiftsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {shifts.map((s) => (
+            {displayedShifts.map((s) => (
               <TableRow key={s.id}>
                 <TableCell className="font-medium whitespace-nowrap">
                   <Link to={`/manage/${id}/shifts/${s.id}`} className="hover:underline">
@@ -115,7 +136,7 @@ export default function ShiftsPage() {
                 </TableCell>
                 <TableCell className="whitespace-nowrap">{s.secteurs?.name}</TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {new Date(s.start_at).toLocaleString("fr-CH")}
+                  {s.start_at ? new Date(s.start_at).toLocaleString("fr-CH") : "Poste ouvert"}
                 </TableCell>
                 <TableCell>
                   <span className="flex items-center gap-1">
@@ -134,7 +155,7 @@ export default function ShiftsPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {shifts.length === 0 && (
+            {displayedShifts.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground">
                   Aucun shift pour l&apos;instant.
@@ -150,24 +171,25 @@ export default function ShiftsPage() {
           <CardTitle>Nouveau shift</CardTitle>
         </CardHeader>
         <CardContent>
-          {secteurs.length === 0 ? (
+          {shiftModeSecteurs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Crée d&apos;abord un{" "}
               <Link to={`/manage/${id}/secteurs`} className="underline">
-                secteur
+                secteur en mode "shifts horodatés"
               </Link>{" "}
-              pour pouvoir ajouter un shift.
+              pour pouvoir ajouter un shift (les secteurs en mode "postes" se gèrent directement
+              sur la page Secteurs).
             </p>
           ) : (
             <form onSubmit={handleCreate} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="secteurId">Secteur</Label>
-                <Select name="secteurId" defaultValue={secteurs[0].id}>
+                <Select name="secteurId" defaultValue={shiftModeSecteurs[0].id}>
                   <SelectTrigger id="secteurId">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {secteurs.map((s) => (
+                    {shiftModeSecteurs.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
                       </SelectItem>

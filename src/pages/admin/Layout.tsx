@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext"
 const navItems: NavItem[] = [
   { href: "/admin/manifestations", label: "Manifestations" },
   { href: "/admin/volunteers", label: "Bénévoles" },
+  { href: "/admin/partners", label: "Partenaires" },
   { href: "/manage", label: "Gérer" },
   { href: "/dashboard", label: "Mon profil" },
 ]
@@ -16,7 +17,7 @@ export default function AdminLayout() {
   return (
     <RequireRole role="super_admin">
       <div className="min-h-screen">
-        <SiteHeader navItems={navItems} userEmail={user?.email} />
+        <SiteHeader navItems={navItems} userEmail={user?.email} zoneLabel="Super admin" />
         <div className="mx-auto max-w-5xl p-4 sm:p-8">
           <Outlet />
         </div>

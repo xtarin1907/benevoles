@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
-import { ArrowLeft, CalendarClock, ExternalLink, MapPin, Tag } from "lucide-react"
+import { ArrowLeft, CalendarClock, ExternalLink, MapPin, Tag, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +20,7 @@ const STATUS_LABELS: Record<string, string> = {
   declined: "Refusée",
   completed: "Effectué",
   no_show: "Absent",
+  waitlisted: "En réserve",
 }
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -28,6 +29,7 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | 
   declined: "destructive",
   completed: "outline",
   no_show: "destructive",
+  waitlisted: "secondary",
 }
 
 export default function ManifestationDetailPage() {
@@ -47,7 +49,7 @@ export default function ManifestationDetailPage() {
       .from("shifts")
       .select("*, secteurs(name)")
       .eq("manifestation_id", id)
-      .order("start_at", { ascending: true })
+      .order("start_at", { ascending: true, nullsFirst: false })
       .then(({ data }) => setShifts(data ?? []))
 
     // Own signups only -- RLS restricts shift_signups reads to the caller's
@@ -73,7 +75,7 @@ export default function ManifestationDetailPage() {
     // right initial status (confirmed/applied) per the manifestation's
     // shift_signup_mode -- see supabase/migrations for why this can't be
     // plain RLS/CHECK constraints (atomicity against concurrent signups).
-    const { error } = await supabase.rpc("create_shift_signup", { _shift_id: shiftId })
+    const { data: signup, error } = await supabase.rpc("create_shift_signup", { _shift_id: shiftId })
 
     if (error) {
       toast.error(error.message)
@@ -82,6 +84,14 @@ export default function ManifestationDetailPage() {
 
     toast.success("Inscription enregistrée.")
     fetchData()
+
+    if (signup) {
+      // Best-effort: the coordinator email is a convenience notification,
+      // not part of the signup's own success/failure.
+      supabase.functions
+        .invoke("notify-coordinator", { body: { shiftSignupId: signup.id, action: "created" } })
+        .catch(() => {})
+    }
   }
 
   if (manifestation === null) {
@@ -140,10 +150,17 @@ export default function ManifestationDetailPage() {
                       <Tag className="size-3.5" /> {s.secteurs.name}
                     </p>
                   )}
-                  <p className="flex items-center gap-1.5">
-                    <CalendarClock className="size-3.5 text-muted-foreground" />
-                    {new Date(s.start_at).toLocaleString("fr-CH")} – {new Date(s.end_at).toLocaleTimeString("fr-CH")}
-                  </p>
+                  {s.start_at && s.end_at ? (
+                    <p className="flex items-center gap-1.5">
+                      <CalendarClock className="size-3.5 text-muted-foreground" />
+                      {new Date(s.start_at).toLocaleString("fr-CH")} – {new Date(s.end_at).toLocaleTimeString("fr-CH")}
+                    </p>
+                  ) : (
+                    <p className="flex items-center gap-1.5">
+                      <Users className="size-3.5 text-muted-foreground" />
+                      Poste ouvert — pas d&apos;horaire fixe
+                    </p>
+                  )}
                   {s.location_name && (
                     <p className="flex items-center gap-1.5 text-muted-foreground">
                       <MapPin className="size-3.5" /> {s.location_name}

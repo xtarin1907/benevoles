@@ -33,10 +33,48 @@
    FDV) plutôt qu'une table `points_rules` par manifestation. Réouvrir
    uniquement si une manifestation le demande réellement (YAGNI).
 
+9. **Liste noire des bénévoles (2026-07-03) : partagée entre
+   organisateurs, dérogation explicite au non-négociable CLAUDE.md
+   d'isolation stricte des données par manifestation.** Décision
+   délibérée de Xavier (AskUserQuestion), pas un oubli ni une brèche
+   accidentelle : un bénévole no-show ou parti avant la fin chez une
+   manifestation doit pouvoir être vu par tous les organisateurs du
+   groupement, avec le motif renseigné. Table `volunteer_blacklist`
+   (voir `data-model.md`) — lecture par tout admin de manifestation ou
+   super_admin, écriture/suppression réservées à la manifestation à
+   l'origine du signalement. **Signal visuel uniquement** — décision
+   couplée : pas de blocage automatique à l'inscription
+   (`create_shift_signup()` inchangée), l'admin décide au cas par cas.
+   Ne pas étendre ce partage cross-manifestation à d'autres données
+   sans repasser par une décision documentée ici.
+
 ## Décisions encore ouvertes
 
 4. **Nom de la plateforme.** "Bénévoles+" est un nom de travail utilisé
    dans cette documentation, pas un choix arrêté.
+
+7. **Rappels WhatsApp (différé).** Demandé par Xavier en alternative/
+   complément au SMS Twilio. Non implémenté : Meta exige des templates
+   pré-approuvés en dehors de la fenêtre de 24h ouverte par le
+   destinataire, ce qui est incompatible avec "texte librement
+   modifiable" tel que demandé pour les rappels. À réévaluer seulement si
+   Xavier accepte explicitement le compromis template-only.
+
+8. **Module payant (abonnement par compte organisateur).** Xavier a
+   demandé un système à paliers multiples "à la To-do" (Stripe Billing,
+   `subscriptions` par organisation, gating applicatif). Architecture
+   complète documentée (voir `changelog.md` 2026-07-02 "Module payant" et
+   le plan de session) mais **rien n'est implémenté** — implique un
+   nouveau concept structurant (`organizations`/`organization_members`)
+   qui n'existe pas encore. Restent à trancher par Xavier avant tout
+   codage : prix/paliers, cadence de facturation (mensuelle vs annuelle
+   — Stripe supporte les deux nativement, ce n'est qu'une question de
+   configuration), et comment rattacher les manifestations/séries
+   existantes à une organisation lors de la migration. En attendant,
+   `manifestation_reminder_settings.sms_enabled` (rappels SMS) sert de
+   substitut simple : un interrupteur activable uniquement par le
+   super_admin, au cas par cas, en lieu et place d'un vrai gating par
+   abonnement.
 
 5. **Consentement newsletter (nLPD/LCD suisse).** Le bénévole doit
    consentir explicitement à recevoir des newsletters (opt-in), séparément
@@ -342,7 +380,60 @@ existantes). Ajouté au passage : page publique `/manifestations/[id]`
       cf. décision prise avec Xavier) avant d'activer l'envoi de
       newsletters à de vrais bénévoles.
 
-### Phase 8 — Mobile (différé)
+### Phase 8 — Panier de shifts, staffing par postes, série/édition, self-serve organisateur, rappels SMS (terminée le 2026-07-02, sauf points explicitement différés)
+
+Grande vague de demandes de Xavier après la migration Vite (Phase "suite"
+de la Phase 1). Détail complet des décisions et du code touché dans
+`changelog.md` (entrée du même jour) et le plan de session
+`~/.claude/plans/splendid-beaming-manatee.md` — résumé ici pour la vue
+d'ensemble par phase.
+
+- [x] Profil bénévole enrichi (DOB/t-shirt/adresse) + confirmation de mot
+      de passe au signup.
+- [x] Upload de logo (bucket Storage `manifestation-logos`).
+- [x] Polices "Maximus discotecus".
+- [x] Repère visuel par espace (bénévole/gestion/super admin) +
+      `ManageSubNav` partagé.
+- [x] Vue bénévoles enrichie (super_admin + admin de manifestation).
+- [x] Modèle série/édition (`manifestation_series`, "Nouvelle édition
+      de...").
+- [x] Annulation self-service d'un shift par le bénévole.
+- [x] Notification email au responsable des bénévoles (`notify-coordinator`).
+- [x] Mode "postes" (staffing par quantité sans horaire).
+- [x] Bénévoles de réserve (waitlist), promotion manuelle.
+- [x] Landing reconstruite : grille 4 colonnes par série, popup d'info,
+      bandeau "cherche des bénévoles".
+- [x] Auto-création de manifestation par un organisateur + validation
+      super_admin (`/manage/new`, `approval_status`).
+- [x] Page `/organisateurs`.
+- [x] Rappels SMS Twilio (`send-reminders`, `pg_cron`/`pg_net`) —
+      **vérifié bout-en-bout au niveau logique DB/RLS uniquement** ;
+      l'envoi Twilio réel n'a jamais été testé, Xavier n'a pas encore
+      fourni `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN`/`TWILIO_FROM_NUMBER`.
+- [x] `bun run build`, `bunx tsc --noEmit`, `bun run lint` : tous verts
+      après chaque groupe de changements.
+- [ ] **Module payant** — plan d'architecture livré (décision ouverte #8
+      ci-dessus), aucune implémentation. Bloque tant que Xavier n'a pas
+      tranché prix/paliers/cadence.
+- [ ] **Vérification visuelle manuelle par Xavier** — pas de navigateur
+      headless disponible dans cet environnement de session (confirmé à
+      plusieurs reprises) ; tout ce qui est purement visuel (grille 4
+      colonnes, popup, repères de navigation, polices) a été vérifié au
+      niveau code/build mais pas à l'écran.
+
+**Compléments post-Phase 8 (2026-07-02/03)** — détail complet dans
+`changelog.md`, résumé ici :
+- [x] Error Boundary React global (filet de sécurité contre les pages
+      blanches), redirection si déjà connecté sur `/login`/`/signup`,
+      toasts de confirmation/erreur sur déconnexion.
+- [x] Bandeau "cherche des bénévoles" en ticker défilant (accessibilité :
+      désactivé si `prefers-reduced-motion`).
+- [x] Page "Nos partenaires" (`/partenaires`, gestion super_admin sur
+      `/admin/partners`, table `partners` + bucket `partner-logos`).
+- [x] Liste noire des bénévoles (`volunteer_blacklist`) — voir Décision
+      #9 ci-dessus.
+
+### Phase 9 — Mobile (différé)
 
 Pas de version mobile tant que le web n'a pas de signal d'usage réel.
 Precedent technique disponible si besoin (FDV-Mobile en Expo/React

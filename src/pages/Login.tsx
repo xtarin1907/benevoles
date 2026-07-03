@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,12 +7,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 import { safeNext } from "@/lib/auth/safe-next"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { user, loading } = useAuth()
   const [searchParams] = useSearchParams()
   const next = searchParams.get("next")
   const [submitting, setSubmitting] = useState(false)
+
+  if (!loading && user) {
+    return <Navigate to={safeNext(next)} replace />
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()

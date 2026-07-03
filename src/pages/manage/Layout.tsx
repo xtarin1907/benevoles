@@ -7,12 +7,16 @@ import { useAuth } from "@/contexts/AuthContext"
 // admins (not just super_admin) belong here. Each page under /manage
 // enforces the real per-manifestation check via RequireManifestationAccess.
 export default function ManageLayout() {
-  const { user, profile } = useAuth()
+  const { user, profile, isManifestationAdmin } = useAuth()
 
   const navItems: NavItem[] = [
     { href: "/manage", label: "Mes manifestations" },
     { href: "/dashboard", label: "Mon profil" },
   ]
+
+  if (isManifestationAdmin || profile?.platform_role === "super_admin") {
+    navItems.push({ href: "/manage/blacklist", label: "Liste noire" })
+  }
 
   if (profile?.platform_role === "super_admin") {
     navItems.push({ href: "/admin/manifestations", label: "Admin" })
@@ -21,7 +25,7 @@ export default function ManageLayout() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen">
-        <SiteHeader navItems={navItems} userEmail={user?.email} />
+        <SiteHeader navItems={navItems} userEmail={user?.email} zoneLabel="Gestion manifestation" />
         <div className="mx-auto max-w-5xl p-4 sm:p-8">
           <Outlet />
         </div>

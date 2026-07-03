@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { AlertTriangle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -16,6 +17,8 @@ type Volunteer = Database["public"]["Tables"]["profiles"]["Row"]
 export default function VolunteersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([])
   const [totalsByVolunteer, setTotalsByVolunteer] = useState<Map<string, number>>(new Map())
+  const [manifestationsByVolunteer, setManifestationsByVolunteer] = useState<Map<string, string[]>>(new Map())
+  const [blacklistedIds, setBlacklistedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const supabase = createClient()
@@ -37,6 +40,26 @@ export default function VolunteersPage() {
         }
         setTotalsByVolunteer(totals)
       })
+
+    supabase
+      .from("manifestation_engagements")
+      .select("volunteer_id, status, manifestations(name)")
+      .neq("status", "withdrawn")
+      .then(({ data }) => {
+        const byVolunteer = new Map<string, string[]>()
+        for (const row of data ?? []) {
+          if (!row.manifestations) continue
+          const names = byVolunteer.get(row.volunteer_id) ?? []
+          names.push(row.manifestations.name)
+          byVolunteer.set(row.volunteer_id, names)
+        }
+        setManifestationsByVolunteer(byVolunteer)
+      })
+
+    supabase
+      .from("volunteer_blacklist")
+      .select("volunteer_id")
+      .then(({ data }) => setBlacklistedIds(new Set(data?.map((b) => b.volunteer_id))))
   }, [])
 
   return (
@@ -52,6 +75,7 @@ export default function VolunteersPage() {
             <TableRow>
               <TableHead>Nom</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Manifestations</TableHead>
               <TableHead>Inscrit le</TableHead>
               <TableHead>Newsletter</TableHead>
               <TableHead>Points</TableHead>
@@ -60,8 +84,18 @@ export default function VolunteersPage() {
           <TableBody>
             {volunteers.map((v) => (
               <TableRow key={v.id}>
-                <TableCell className="font-medium whitespace-nowrap">{v.full_name ?? "—"}</TableCell>
+                <TableCell className="font-medium whitespace-nowrap">
+                  <span className="flex items-center gap-1.5">
+                    {v.full_name ?? "—"}
+                    {blacklistedIds.has(v.id) && (
+                      <AlertTriangle className="size-3.5 text-destructive" aria-label="Bénévole dans la liste noire" />
+                    )}
+                  </span>
+                </TableCell>
                 <TableCell className="whitespace-nowrap">{v.email}</TableCell>
+                <TableCell className="whitespace-nowrap">
+                  {(manifestationsByVolunteer.get(v.id) ?? []).join(", ") || "—"}
+                </TableCell>
                 <TableCell className="whitespace-nowrap">
                   {new Date(v.created_at).toLocaleDateString("fr-CH")}
                 </TableCell>
@@ -75,7 +109,7 @@ export default function VolunteersPage() {
             ))}
             {volunteers.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   Aucun bénévole inscrit pour l&apos;instant.
                 </TableCell>
               </TableRow>

@@ -22,7 +22,7 @@ export default function DashboardLayout() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen">
-        <SiteHeader navItems={navItems} userEmail={user?.email} />
+        <SiteHeader navItems={navItems} userEmail={user?.email} zoneLabel="Espace bénévole" />
         <div className="mx-auto max-w-5xl p-4 sm:p-8">
           <Outlet />
         </div>

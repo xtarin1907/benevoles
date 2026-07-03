@@ -39,7 +39,11 @@ manifestation A ne doit jamais voir les données de gestion de B) se fait
 **entièrement via RLS Postgres**, pas via une séparation physique de bases.
 C'est un non-négociable du projet (`CLAUDE.md`) — la suite RLS doit être le
 premier gate CI ajouté dès qu'il y a du code (voir `CLAUDE.md`
-§Enforcement mécanique).
+§Enforcement mécanique). **Exception documentée et assumée (2026-07-03,
+`roadmap.md` Décision #9)** : la liste noire des bénévoles
+(`volunteer_blacklist`) est délibérément partagée entre toutes les
+manifestations — décision produit explicite de Xavier, pas une brèche.
+C'est la seule table qui déroge à ce principe à ce jour.
 
 ## Rôles
 
@@ -52,8 +56,10 @@ une table de jointure pour le rôle par manifestation :
 2. **manifestation_admin** — un ou plusieurs comptes par manifestation
    (table `manifestation_admins`). Gère uniquement sa/ses manifestation(s) :
    branding (logo, couleur), secteurs, shifts, validation des candidatures,
-   déclenchement de newsletter *scopée à sa manifestation* (le broadcast
-   plateforme entière reste une question ouverte — voir `roadmap.md`).
+   déclenchement de newsletter — **résolu** (`roadmap.md` Décision #2) :
+   n'importe quel admin de manifestation peut aussi cibler toute la
+   plateforme, pas seulement sa propre manifestation, pas de file
+   d'approbation.
 3. **bénévole** — utilisateur public inscrit. Un compte unique, engagements
    sur N manifestations, inscriptions à des shifts, historique de points.
 
@@ -90,8 +96,10 @@ Source : exploration du repo `/Users/xaviertarin/myCloud/TECHNIQUE/Economat FDV`
   seule table avec `role_type`) — chez nous les bénévoles sont des
   `profiles` Supabase Auth dès le départ, plus simple pour un compte
   unique multi-manifestations.
-- SMS via Twilio — non demandé, pas de non-négociable dessus. À revisiter
-  seulement si un signal réel apparaît (taux de no-show élevé, par ex.).
+- SMS via Twilio — **construit depuis** (`roadmap.md` Phase 8) : rappels
+  de shift aux bénévoles, schéma + Edge Function `send-reminders` +
+  `pg_cron`/`pg_net` en place, envoi réel non testé faute d'identifiants
+  Twilio de Xavier.
 - `shift_pauses` (pauses dans un shift) — fonctionnalité non demandée,
   YAGNI.
 - Le Kanban de candidatures (`CandidaturesKanban`) — pertinent seulement si

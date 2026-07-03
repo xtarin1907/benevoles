@@ -60,16 +60,25 @@ function DropdownMenuLabel({
 }: MenuPrimitive.GroupLabel.Props & {
   inset?: boolean
 }) {
+  // Base UI's GroupLabel reads MenuGroupContext and throws ("Base UI error
+  // #31: MenuGroupContext is missing") if it isn't inside a Menu.Group --
+  // unlike Radix's equivalent, which didn't require this. Wrapping here
+  // makes DropdownMenuLabel safe to use standalone (e.g. just as a header
+  // line, not literally grouping sibling items) without every call site
+  // needing to remember to add a Group. Group has no default styling, so
+  // this doesn't change layout/appearance.
   return (
-    <MenuPrimitive.GroupLabel
-      data-slot="dropdown-menu-label"
-      data-inset={inset}
-      className={cn(
-        "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
-        className
-      )}
-      {...props}
-    />
+    <MenuPrimitive.Group>
+      <MenuPrimitive.GroupLabel
+        data-slot="dropdown-menu-label"
+        data-inset={inset}
+        className={cn(
+          "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
+          className
+        )}
+        {...props}
+      />
+    </MenuPrimitive.Group>
   )
 }
 

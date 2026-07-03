@@ -1,6 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 import { HeartHandshake, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -18,9 +20,11 @@ export type NavItem = { href: string; label: string }
 export function SiteHeader({
   navItems,
   userEmail,
+  zoneLabel,
 }: {
   navItems: NavItem[]
   userEmail?: string
+  zoneLabel?: string
 }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -32,17 +36,29 @@ export function SiteHeader({
     )
 
   async function handleSignOut() {
-    await signOut()
-    navigate("/login")
+    try {
+      await signOut()
+      toast.success("Déconnecté(e).")
+      navigate("/login")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Échec de la déconnexion.")
+    }
   }
 
   return (
     <header className="sticky top-0 z-40 border-b backdrop-blur supports-backdrop-filter:bg-background/80">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
-        <Link to="/" className="group flex shrink-0 items-center gap-2 text-lg font-semibold">
-          <HeartHandshake className="size-5 text-primary transition-transform group-hover:scale-105 group-hover:rotate-3" />
-          Bénévoles+
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link to="/" className="group flex items-center gap-2 text-lg font-semibold">
+            <HeartHandshake className="size-5 text-primary transition-transform group-hover:scale-105 group-hover:rotate-3" />
+            Bénévoles+
+          </Link>
+          {zoneLabel && (
+            <Badge variant="outline" className="hidden sm:inline-flex">
+              {zoneLabel}
+            </Badge>
+          )}
+        </div>
         <nav className="hidden flex-1 items-center gap-1 sm:flex">
           {navItems.map((item) => (
             <Link key={item.href} to={item.href} className={linkClass(item.href)}>
