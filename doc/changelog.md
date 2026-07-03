@@ -3,6 +3,27 @@
 Journal chronologique des décisions actées et évolutions du projet
 (plus récent en premier).
 
+## 2026-07-03 (suite) — Formulaires de création de manifestation enrichis
+
+Les deux formulaires de création (`/admin/manifestations/new` super_admin
+et `/manage/new` self-service organisateur) n'avaient que nom/description/
+couleur/mode d'inscription — tout le reste (logo, dates, site web, email
+de contact, responsable des bénévoles) ne se saisissait qu'après coup sur
+la page de branding, obligeant un aller-retour. Décision Xavier
+(AskUserQuestion) : enrichir les deux formulaires à l'identique, jusqu'à
+parité avec `Detail.tsx` (sauf `isPublished`, non pertinent à la
+création). Aucun changement de schéma — tous les champs existaient déjà.
+
+**Piège trouvé et corrigé en vérifiant** : sur le formulaire self-service,
+l'upload du logo doit se faire **après** l'auto-bootstrap du créateur
+comme `owner` dans `manifestation_admins`, pas avant — la policy
+d'écriture du bucket `manifestation-logos` exige `is_manifestation_admin`,
+qui n'est vrai qu'une fois cette ligne insérée (le créateur n'est pas
+encore admin de sa propre manifestation juste après l'`insert` sur
+`manifestations`). Reproduit et confirmé (l'upload échoue bien sous RLS
+si tenté avant le bootstrap), puis vérifié que l'ordre correct (bootstrap
+→ upload) fonctionne pour les deux formulaires. 0 résidu de test.
+
 ## 2026-07-03 (suite) — Bascule de visibilité sur les partenaires
 
 Xavier précise l'usage de la page "Nos partenaires" (déjà construite la
