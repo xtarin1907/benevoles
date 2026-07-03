@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, type FormEvent } from "react"
 import { toast } from "sonner"
-import { Building2, Trash2 } from "lucide-react"
+import { Building2, Eye, EyeOff, Trash2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -59,6 +60,7 @@ export default function AdminPartnersPage() {
       logo_url: logoUrl,
       website_url: (formData.get("websiteUrl") as string) || null,
       order: formData.get("order") ? Number(formData.get("order")) : 0,
+      is_visible: formData.get("isVisible") === "on",
     })
     setSubmitting(false)
 
@@ -75,6 +77,18 @@ export default function AdminPartnersPage() {
 
   async function deletePartner(id: string) {
     const { error } = await createClient().from("partners").delete().eq("id", id)
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+    fetchData()
+  }
+
+  async function toggleVisibility(p: Partner) {
+    const { error } = await createClient()
+      .from("partners")
+      .update({ is_visible: !p.is_visible })
+      .eq("id", p.id)
     if (error) {
       toast.error(error.message)
       return
@@ -114,6 +128,10 @@ export default function AdminPartnersPage() {
               <Label htmlFor="order">Ordre d&apos;affichage</Label>
               <Input id="order" name="order" type="number" defaultValue={0} />
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="isVisible" defaultChecked />
+              Visible sur la page publique
+            </label>
             <Button type="submit" disabled={submitting} className="self-start">
               {submitting ? "Envoi..." : "Ajouter"}
             </Button>
@@ -129,6 +147,7 @@ export default function AdminPartnersPage() {
               <TableHead>Nom</TableHead>
               <TableHead>Site web</TableHead>
               <TableHead>Ordre</TableHead>
+              <TableHead>Affichage</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -148,6 +167,14 @@ export default function AdminPartnersPage() {
                 <TableCell className="whitespace-nowrap">{p.website_url ?? "—"}</TableCell>
                 <TableCell>{p.order}</TableCell>
                 <TableCell>
+                  <Button variant="ghost" size="sm" onClick={() => toggleVisibility(p)}>
+                    {p.is_visible ? <Eye /> : <EyeOff />}
+                    <Badge variant={p.is_visible ? "default" : "secondary"}>
+                      {p.is_visible ? "Visible" : "Masqué"}
+                    </Badge>
+                  </Button>
+                </TableCell>
+                <TableCell>
                   <Button variant="ghost" size="icon-sm" onClick={() => deletePartner(p.id)}>
                     <Trash2 />
                   </Button>
@@ -156,7 +183,7 @@ export default function AdminPartnersPage() {
             ))}
             {partners.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   Aucun partenaire pour l&apos;instant.
                 </TableCell>
               </TableRow>

@@ -242,7 +242,8 @@ silencieusement.
 
 Ajoutée 2026-07-02 — page publique "Nos partenaires" liée depuis la
 landing, gérée par le super_admin (logos façon page "qui sommes-nous" de
-Maximus Discotecus).
+Maximus Discotecus). Représente les organisations du groupement qui
+recherchent des bénévoles (logo + nom).
 
 | Colonne | Type | Note |
 | --- | --- | --- |
@@ -251,6 +252,7 @@ Maximus Discotecus).
 | `logo_url` | text, nullable | bucket Storage `partner-logos` (public, écriture super_admin uniquement) |
 | `website_url` | text, nullable | carte cliquable vers le site si renseigné |
 | `order` | int | défaut `0`, tri d'affichage |
+| `is_visible` | boolean | défaut `true`, ajouté 2026-07-03 — permet au super_admin de masquer un partenaire de la page publique sans le supprimer (filtre côté requête sur `/partenaires`, pas côté RLS — même pattern que `manifestations.is_published`) |
 | `created_at` | timestamptz | |
 
 RLS : lecture publique (`anon` + `authenticated`, même pattern que

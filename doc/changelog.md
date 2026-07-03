@@ -3,6 +3,21 @@
 Journal chronologique des décisions actées et évolutions du projet
 (plus récent en premier).
 
+## 2026-07-03 (suite) — Bascule de visibilité sur les partenaires
+
+Xavier précise l'usage de la page "Nos partenaires" (déjà construite la
+veille) : il s'agit des organisations du groupement qui recherchent des
+bénévoles, logo + nom, gérées par le super_admin — ce qui correspondait
+déjà à l'implémentation existante. Seul manque réel : pas de moyen de
+retirer un partenaire de l'affichage public sans le supprimer
+définitivement. `partners.is_visible` ajoutée (défaut `true`), case à
+cocher sur le formulaire d'ajout (`/admin/partners`) + bouton pour
+basculer une entrée existante, filtre `.eq("is_visible", true)` sur la
+page publique `/partenaires`. Filtre côté requête, pas côté RLS — même
+principe que `manifestations.is_published`. Vérifié bout-en-bout : un
+partenaire masqué disparaît de la requête publique anonyme mais reste
+visible/gérable par le super_admin ; 0 résidu de test.
+
 ## 2026-07-03 (suite) — Bug de la page blanche au clic sur l'avatar : cause confirmée et corrigée
 
 L'Error Boundary ajoutée la veille (voir entrée du dessous) a fait son

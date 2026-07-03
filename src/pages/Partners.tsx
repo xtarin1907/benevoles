@@ -16,6 +16,7 @@ export default function PartnersPage() {
     createClient()
       .from("partners")
       .select("*")
+      .eq("is_visible", true)
       .order("order", { ascending: true })
       .order("name", { ascending: true })
       .then(({ data }) => setPartners(data ?? []))

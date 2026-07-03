@@ -275,6 +275,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_visible: boolean
           logo_url: string | null
           name: string
           order: number
@@ -283,6 +284,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_visible?: boolean
           logo_url?: string | null
           name: string
           order?: number
@@ -291,6 +293,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_visible?: boolean
           logo_url?: string | null
           name?: string
           order?: number
