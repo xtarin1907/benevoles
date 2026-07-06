@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Building2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Database } from "@/lib/supabase/database.types"
@@ -23,9 +24,9 @@ export default function PartnersPage() {
   }, [])
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader navItems={user ? [{ href: "/dashboard", label: "Mon espace" }] : []} userEmail={user?.email} />
-      <main className="mx-auto flex max-w-4xl flex-col gap-8 px-4 py-8 sm:py-16">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-4 py-8 sm:py-16">
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-3xl font-bold tracking-tight">Nos partenaires</h1>
           <p className="text-muted-foreground">
@@ -69,6 +70,7 @@ export default function PartnersPage() {
           )}
         </div>
       </main>
+      <SiteFooter />
     </div>
   )
 }

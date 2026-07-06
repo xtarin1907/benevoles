@@ -3,6 +3,7 @@ import { CalendarClock, Megaphone, Users2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 import { useAuth } from "@/contexts/AuthContext"
 
 const STEPS = [
@@ -27,7 +28,7 @@ export default function OrganizersPage() {
   const { user } = useAuth()
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader navItems={user ? [{ href: "/manage", label: "Gérer" }] : []} userEmail={user?.email} />
       <section className="border-b bg-linear-to-b from-background to-muted/40 px-4 py-12 text-center sm:py-16">
         <div className="mx-auto flex max-w-2xl flex-col items-center gap-4">
@@ -43,7 +44,7 @@ export default function OrganizersPage() {
         </div>
       </section>
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-8 p-4 sm:p-8">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 p-4 sm:p-8">
         <div className="grid gap-4 sm:grid-cols-3">
           {STEPS.map(({ icon: Icon, title, text }) => (
             <Card key={title}>
@@ -64,6 +65,7 @@ export default function OrganizersPage() {
           </Link>
         </p>
       </main>
+      <SiteFooter />
     </div>
   )
 }

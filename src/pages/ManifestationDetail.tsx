@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ManifestationAvatar } from "@/components/manifestation-avatar"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Database } from "@/lib/supabase/database.types"
@@ -103,12 +104,12 @@ export default function ManifestationDetailPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader
         navItems={user ? [{ href: "/dashboard", label: "Mon espace" }] : []}
         userEmail={user?.email}
       />
-      <main className="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-8">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 sm:p-8">
         {manifestation && (
           <div>
             <Link to="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:underline">
@@ -206,6 +207,7 @@ export default function ManifestationDetailPage() {
           )}
         </div>
       </main>
+      <SiteFooter />
     </div>
   )
 }

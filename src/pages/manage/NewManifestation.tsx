@@ -53,7 +53,7 @@ export default function NewManifestationSelfServePage() {
         name,
         slug: slugify(name),
         description: (formData.get("description") as string) || null,
-        color_hex: (formData.get("colorHex") as string) || "#6366f1",
+        color_hex: (formData.get("colorHex") as string) || "#7B2E38",
         start_date: (formData.get("startDate") as string) || null,
         end_date: (formData.get("endDate") as string) || null,
         website_url: (formData.get("websiteUrl") as string) || null,
@@ -138,7 +138,7 @@ export default function NewManifestationSelfServePage() {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="colorHex">Couleur</Label>
-            <Input id="colorHex" name="colorHex" type="color" defaultValue="#6366f1" className="h-9 w-16 p-1" />
+            <Input id="colorHex" name="colorHex" type="color" defaultValue="#7B2E38" className="h-9 w-16 p-1" />
           </div>
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="flex flex-1 flex-col gap-2">

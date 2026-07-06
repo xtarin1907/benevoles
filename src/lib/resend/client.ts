@@ -15,4 +15,4 @@ export function createResendClient() {
 // only works in Resend's own sandbox mode. Set RESEND_FROM_EMAIL once a
 // real sending domain is verified.
 export const NEWSLETTER_FROM =
-  process.env.RESEND_FROM_EMAIL ?? "Bénévoles+ <onboarding@resend.dev>"
+  process.env.RESEND_FROM_EMAIL ?? "Bénévoles Lavaux <onboarding@resend.dev>"

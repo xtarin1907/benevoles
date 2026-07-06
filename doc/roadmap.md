@@ -1,4 +1,4 @@
-# Roadmap — Bénévoles+
+# Roadmap — Bénévoles Lavaux
 
 ## Décisions actées (2026-07-01)
 
@@ -50,8 +50,12 @@
 
 ## Décisions encore ouvertes
 
-4. **Nom de la plateforme.** "Bénévoles+" est un nom de travail utilisé
-   dans cette documentation, pas un choix arrêté.
+4. **Nom de la plateforme.** ~~"Bénévoles+" est un nom de travail utilisé
+   dans cette documentation, pas un choix arrêté.~~ **Tranché le 2026-07-06 :
+   la plateforme s'appelle "Bénévoles Lavaux".** Le nom affiché a été mis à
+   jour dans le code (header, titre, pages auth, expéditeur email) et les
+   titres de la documentation. Les entrées historiques du changelog gardent
+   la mention "Bénévoles+" telle qu'écrite à l'époque.
 
 7. **Rappels WhatsApp (différé).** Demandé par Xavier en alternative/
    complément au SMS Twilio. Non implémenté : Meta exige des templates

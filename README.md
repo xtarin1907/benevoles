@@ -1,4 +1,4 @@
-# Bénévoles+
+# Bénévoles Lavaux
 
 Plateforme de gestion de bénévoles pour un groupement d'associations
 (Vite + React + React Router, Supabase). Voir `doc/` pour l'architecture,

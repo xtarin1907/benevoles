@@ -8,6 +8,9 @@ import SignupPage from "@/pages/Signup"
 import UpdatePasswordPage from "@/pages/UpdatePassword"
 import AuthCallbackPage from "@/pages/AuthCallback"
 import ManifestationDetailPage from "@/pages/ManifestationDetail"
+import LegalNoticePage from "@/pages/legal/LegalNotice"
+import PrivacyPage from "@/pages/legal/Privacy"
+import TermsPage from "@/pages/legal/Terms"
 import DashboardLayout from "@/pages/dashboard/Layout"
 import DashboardProfilePage from "@/pages/dashboard/Profile"
 import EngagementsPage from "@/pages/dashboard/Engagements"
@@ -41,6 +44,9 @@ export function App() {
       <Route path="/update-password" element={<UpdatePasswordPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/manifestations/:id" element={<ManifestationDetailPage />} />
+      <Route path="/mentions-legales" element={<LegalNoticePage />} />
+      <Route path="/confidentialite" element={<PrivacyPage />} />
+      <Route path="/cgu" element={<TermsPage />} />
 
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardProfilePage />} />

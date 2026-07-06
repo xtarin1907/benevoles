@@ -1,0 +1,17 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bénévoles Lavaux">
+  <circle cx="256" cy="256" r="246" fill="none" stroke="#7B2E38" stroke-width="8" />
+  <circle cx="256" cy="256" r="228" fill="none" stroke="#DDA85E" stroke-width="4" />
+  <path d="M256 388 C205 346 120 306 118 232 C116 178 165 148 205 166 C228 176 248 185 256 193 L256 388 Z" fill="#7B2E38" />
+  <path d="M256 388 C307 346 392 306 394 232 C396 178 347 148 307 166 C284 176 264 185 256 193 L256 388 Z" fill="#C05B34" />
+  <g stroke="#F6EFE4" stroke-width="9" stroke-linecap="round" fill="none">
+    <path d="M168 236 C176 214 186 202 196 194" />
+    <path d="M198 244 C206 224 216 212 226 205" />
+    <path d="M344 236 C336 214 326 202 316 194" />
+    <path d="M314 244 C306 224 296 212 286 205" />
+  </g>
+  <g fill="#DDA85E">
+    <circle cx="230" cy="402" r="9" />
+    <circle cx="256" cy="406" r="9" />
+    <circle cx="282" cy="402" r="9" />
+  </g>
+</svg>

@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts"
 import { AuthError, createServiceRoleClient, getCaller, isManifestationAdmin } from "../_shared/auth.ts"
+import { brandEmail } from "../_shared/email.ts"
 
 function escapeHtml(text: string) {
   return text
@@ -67,8 +68,8 @@ Deno.serve(async (req) => {
     if (!resendApiKey) {
       throw new AuthError(500, "Newsletter non configurée : RESEND_API_KEY manquant.")
     }
-    const from = Deno.env.get("RESEND_FROM_EMAIL") ?? "Bénévoles+ <onboarding@resend.dev>"
-    const html = `<p>${escapeHtml(body).replace(/\n/g, "<br>")}</p>`
+    const from = Deno.env.get("RESEND_FROM_EMAIL") ?? "Bénévoles Lavaux <onboarding@resend.dev>"
+    const html = brandEmail(`<p>${escapeHtml(body).replace(/\n/g, "<br>")}</p>`)
 
     // Resend's batch endpoint caps at 100 emails per call (per-recipient
     // `to` arrays, never a shared one -- recipients must not see each

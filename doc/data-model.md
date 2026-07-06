@@ -1,4 +1,4 @@
-# Modèle de données — Bénévoles+
+# Modèle de données — Bénévoles Lavaux
 
 Statut : **schéma appliqué et en évolution active** — ce document reflète
 l'état réel de la base Supabase (projet `xxmmitlrvzdxrwulyebz`), à tenir à
@@ -51,7 +51,7 @@ qu'au regroupement (nom de la série, affichage groupé sur la landing).
 | `slug` | text unique | pour les URLs publiques |
 | `description` | text | |
 | `logo_url` | text | |
-| `color_hex` | text | défaut `#6366f1` (pattern repris d'Economat FDV `secteurs.couleur`) |
+| `color_hex` | text | défaut `#7B2E38` (bordeaux de marque, migration 2026-07-06 ; auparavant `#6366f1` indigo). Pattern repris d'Economat FDV `secteurs.couleur` |
 | `start_date` / `end_date` | date | |
 | `is_published` | boolean | défaut `false` — contrôle la visibilité sur la landing page publique |
 | `series_id` | uuid (FK `manifestation_series.id`, nullable, `ON DELETE SET NULL`) | ajouté 2026-07-02 — rattache une édition à un événement récurrent |
@@ -313,6 +313,20 @@ d'un tiers.
   construire la liste de destinataires d'une newsletter `'all_platform'`,
   conséquence directe et déjà acceptée de la Décision #2 (n'importe quel
   admin peut cibler toute la plateforme), pas un nouveau risque.
+
+## Fonctions RPC publiques (`SECURITY DEFINER`, ouvertes à `anon`)
+
+Deux fonctions seulement sont exposées à `anon` — chacune ne renvoie que des
+données pensées pour la page publique, jamais de PII ni de données admin par
+manifestation :
+
+- `manifestations_seeking_volunteers()` — liste des manifestations publiées
+  ayant au moins un shift sous-staffé (signal booléen, pas de compte de places).
+- `platform_impact_stats()` (ajout 2026-07-06) — agrégats globaux pour le
+  bandeau d'impact de la landing : `manifestations_count` (publiées),
+  `volunteers_count` (profils `platform_role = 'user'`), `volunteer_hours`
+  (somme des durées de shifts sur les `shift_signups` au statut `completed`).
+  Ne renvoie que des totaux — aucune ligne identifiante.
 
 Le test d'isolation RLS inter-manifestation (un admin de A ne voit jamais
 B) est un non-négociable (`CLAUDE.md`) et doit être le premier test

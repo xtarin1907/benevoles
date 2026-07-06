@@ -1,4 +1,4 @@
-# Architecture — Bénévoles+
+# Architecture — Bénévoles Lavaux
 
 ## Vue d'ensemble
 

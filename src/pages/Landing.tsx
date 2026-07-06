@@ -2,10 +2,12 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import {
+  ArrowRight,
+  Building2,
   CalendarClock,
   CalendarDays,
+  Clock,
   Globe,
-  HeartHandshake,
   Mail,
   Megaphone,
   Sparkles,
@@ -23,12 +25,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ManifestationAvatar } from "@/components/manifestation-avatar"
+import { BrandLogo } from "@/components/brand-logo"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Database } from "@/lib/supabase/database.types"
 
 type Manifestation = Database["public"]["Tables"]["manifestations"]["Row"]
+type Partner = Database["public"]["Tables"]["partners"]["Row"]
+type ImpactStats = Database["public"]["Functions"]["platform_impact_stats"]["Returns"][number]
 
 const BENEFITS = [
   {
@@ -87,9 +93,23 @@ export default function LandingPage() {
   const [manifestations, setManifestations] = useState<Manifestation[] | null>(null)
   const [engagedIds, setEngagedIds] = useState<Set<string>>(new Set())
   const [seekingVolunteers, setSeekingVolunteers] = useState<{ manifestation_id: string; name: string }[]>([])
+  const [partners, setPartners] = useState<Partner[]>([])
+  const [stats, setStats] = useState<ImpactStats | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
+
+    // Public-safe impact aggregates (grand totals only) for the stats band.
+    supabase.rpc("platform_impact_stats").then(({ data }) => setStats(data?.[0] ?? null))
+
+    // Same query as the /partenaires page -- visible partners, ordered.
+    supabase
+      .from("partners")
+      .select("*")
+      .eq("is_visible", true)
+      .order("order", { ascending: true })
+      .order("name", { ascending: true })
+      .then(({ data }) => setPartners(data ?? []))
 
     // Consolidated calendar (v1): all published manifestations sorted by
     // start date, so a visitor sees what's coming up and when -- a full
@@ -137,17 +157,32 @@ export default function LandingPage() {
 
   const featured = manifestations ? featuredManifestationsBySeries(manifestations) : null
 
+  // Only surface impact tiles that carry a real number -- showing "0 bénévoles"
+  // on a fresh platform reads as empty, so zero-valued tiles are dropped and
+  // the whole band hides when nothing is worth showing.
+  const impactTiles = (stats
+    ? [
+        { icon: CalendarDays, value: stats.manifestations_count, label: "manifestations" },
+        { icon: Users, value: stats.volunteers_count, label: "bénévoles" },
+        { icon: Clock, value: Math.round(stats.volunteer_hours), label: "heures de bénévolat" },
+      ]
+    : []
+  ).filter((t) => t.value > 0)
+
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader
         navItems={user ? [{ href: "/dashboard", label: "Mon espace" }] : []}
         userEmail={user?.email}
       />
-      <section className="border-b bg-linear-to-b from-background to-muted/40 px-4 py-12 text-center sm:py-16">
-        <div className="mx-auto flex max-w-2xl flex-col items-center gap-4">
-          <div className="flex size-14 items-center justify-center rounded-full bg-primary/10">
-            <HeartHandshake className="size-7 text-primary" />
-          </div>
+      <section className="relative overflow-hidden border-b bg-background px-4 py-12 text-center sm:py-16">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-25"
+          style={{ backgroundImage: "url(/hero-lavaux.jpg)" }}
+        />
+        <div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center gap-4">
+          <BrandLogo className="size-16" />
           <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
             Vis les manifestations <span className="text-gradient">de l&apos;intérieur</span>.
           </h1>
@@ -208,7 +243,29 @@ export default function LandingPage() {
         </div>
       )}
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-8 p-4 sm:p-8">
+      {impactTiles.length > 0 && (
+        <section className="border-b bg-muted/30 px-4 py-10">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-start justify-center gap-x-16 gap-y-6 text-center">
+            {impactTiles.map(({ icon: Icon, value, label }) => (
+              <div key={label} className="flex flex-col items-center gap-1">
+                <Icon className="size-5 text-primary" />
+                <span className="text-2xl font-bold tracking-tight sm:text-4xl">
+                  {value.toLocaleString("fr-CH")}
+                </span>
+                <span className="text-xs text-muted-foreground sm:text-sm">{label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 p-4 sm:p-8">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-2xl font-bold tracking-tight">Manifestations à venir</h2>
+          <p className="text-sm text-muted-foreground">
+            Rejoins l&apos;une des manifestations du groupement et choisis tes shifts.
+          </p>
+        </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {featured?.map((m, i) => {
             const dateRange = formatDateRange(m.start_date, m.end_date)
@@ -289,6 +346,14 @@ export default function LandingPage() {
           )}
         </div>
 
+        <div className="flex flex-col items-center gap-2 pt-4 text-center">
+          <h2 className="text-2xl font-bold tracking-tight">Pourquoi devenir bénévole ?</h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Le groupement d&apos;associations de Lavaux réunit les manifestations de la
+            région et leurs équipes bénévoles. Un seul compte pour t&apos;engager partout,
+            cumuler des points et vivre les événements de l&apos;intérieur.
+          </p>
+        </div>
         <div className="grid gap-4 sm:grid-cols-3">
           {BENEFITS.map(({ icon: Icon, title, text }) => (
             <Card
@@ -305,7 +370,54 @@ export default function LandingPage() {
             </Card>
           ))}
         </div>
+
+        {partners.length > 0 && (
+          <section className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-2xl font-bold tracking-tight">Nos partenaires</h2>
+              <Link
+                to="/partenaires"
+                className="flex items-center gap-1 text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              >
+                Voir tous nos partenaires <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-3 gap-4 sm:grid-cols-5 lg:grid-cols-6">
+              {partners.map((partner) => {
+                const tile = (
+                  <div className="flex aspect-square items-center justify-center rounded-lg border bg-white p-3 transition-shadow hover:shadow-md">
+                    {partner.logo_url ? (
+                      <img
+                        src={partner.logo_url}
+                        alt={partner.name}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    ) : (
+                      <Building2 className="size-6 text-muted-foreground" />
+                    )}
+                  </div>
+                )
+                return partner.website_url ? (
+                  <a
+                    key={partner.id}
+                    href={partner.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={partner.name}
+                  >
+                    {tile}
+                  </a>
+                ) : (
+                  <div key={partner.id} title={partner.name}>
+                    {tile}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
       </main>
+      <SiteFooter />
     </div>
   )
 }

@@ -82,7 +82,7 @@ export default function ManageManifestationPage() {
       .update({
         name: formData.get("name") as string,
         description: (formData.get("description") as string) || null,
-        color_hex: (formData.get("colorHex") as string) || "#6366f1",
+        color_hex: (formData.get("colorHex") as string) || "#7B2E38",
         ...(logoUrl ? { logo_url: logoUrl } : {}),
         start_date: (formData.get("startDate") as string) || null,
         end_date: (formData.get("endDate") as string) || null,

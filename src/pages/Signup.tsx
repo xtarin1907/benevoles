@@ -80,7 +80,7 @@ export default function SignupPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4 sm:p-8">
       <Link to="/" className="text-lg font-semibold">
-        Bénévoles+
+        Bénévoles Lavaux
       </Link>
       <Card className="w-full max-w-md">
         <CardHeader>

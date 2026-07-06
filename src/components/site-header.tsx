@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { HeartHandshake, LogOut } from "lucide-react"
+import { LogOut } from "lucide-react"
+import { BrandLogo } from "@/components/brand-logo"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -50,8 +51,8 @@ export function SiteHeader({
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
         <div className="flex shrink-0 items-center gap-2">
           <Link to="/" className="group flex items-center gap-2 text-lg font-semibold">
-            <HeartHandshake className="size-5 text-primary transition-transform group-hover:scale-105 group-hover:rotate-3" />
-            Bénévoles+
+            <BrandLogo className="size-6 transition-transform group-hover:scale-105 group-hover:rotate-3" />
+            Bénévoles Lavaux
           </Link>
           {zoneLabel && (
             <Badge variant="outline" className="hidden sm:inline-flex">

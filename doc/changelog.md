@@ -1,7 +1,85 @@
-# Changelog — Bénévoles+
+# Changelog — Bénévoles Lavaux
 
 Journal chronologique des décisions actées et évolutions du projet
 (plus récent en premier).
+
+## 2026-07-06 (suite) — Identité graphique + déploiement des migrations
+
+Xavier fournit l'identité graphique : cœur bicolore **bordeaux** (`#7B2E38`) /
+**terracotta** (`#C05B34`) dans un double anneau **or** (`#DDA85E`), fond crème.
+Adaptation complète (structure/agencement inchangé) :
+
+- **Logo recréé en SVG** — `src/components/brand-logo.tsx` (`<BrandLogo />`,
+  couleurs de marque en dur) remplace l'icône `HeartHandshake` dans le header,
+  le footer et le hero. Même emblème en `public/favicon.svg` (référencé avant le
+  `.ico` de fallback dans `index.html`). Rendu contrôlé visuellement.
+- **Palette OKLCH** (`src/globals.css`) : `:root` et `.dark` refondus autour du
+  bordeaux (primaire) / terracotta / or / crème ; `--chart-1..3` = teintes de
+  marque ; `.text-gradient` = bordeaux → terracotta.
+- **Couleur par défaut des manifestations** : `#6366f1` (indigo) → `#7B2E38`
+  (code des 3 formulaires + migration `20260706120500_manifestation_default_color`,
+  `ALTER ... SET DEFAULT` — n'affecte que les futures insertions).
+- **Emails de marque** : wrapper HTML inline partagé
+  `supabase/functions/_shared/email.ts` (`brandEmail()`, bandeau bordeaux +
+  wordmark + pied crème) appliqué à `notify-coordinator` et `send-newsletter`.
+
+- **Photo de fond du hero** : une vue de Lavaux (vignobles sur le Léman,
+  `public/hero-lavaux.jpg`, optimisée 13,8 Mo → ~628 Ko en 1920×1080 via `sips`)
+  est posée en fond du hero, entre le header et le bandeau breaking-news, à
+  ~25% d'opacité sur le fond crème (calque décoratif `aria-hidden`, contenu en
+  `relative z-10`). Texte foncé conservé, lisibilité vérifiée par capture.
+
+**Déploiement Supabase distant** : l'historique de migrations avait divergé (7
+migrations du 1er juillet re-horodatées localement, jamais reflétées dans le
+ledger distant — le schéma, lui, les possédait déjà). Réconcilié via
+`supabase migration repair` (`reverted` sur les 7 versions distantes orphelines +
+`applied` sur les 7 locales, **sans toucher au schéma**), puis `supabase db push`
+a appliqué les 2 seules migrations neuves (`platform_impact_stats` +
+`manifestation_default_color`). Types régénérés depuis le distant
+(`supabase gen types --linked`). Smoke test de la RPC : renvoie bien les agrégats
+(`manifestations_count`, `volunteers_count`, `volunteer_hours`). Le bandeau
+statistiques n'affiche que les tuiles > 0 (dégradation propre sur plateforme
+encore vide).
+
+## 2026-07-06 — Refonte de la landing + renommage « Bénévoles Lavaux »
+
+Xavier demande de recréer la landing en s'inspirant de la **structure** de
+[swissvolunteers.ch](https://www.swissvolunteers.ch), tout en gardant nos
+codes couleur (orange/ambre OKLCH) et nos composants. Arbitrages tranchés
+via AskUserQuestion : niveau « structure/agencement uniquement », ajout d'un
+bandeau de statistiques d'impact + d'une grille de partenaires sur la
+landing + d'un footer partagé ; **pas** de section actualités/news (nouveau
+modèle de données = différé, cf. non-négociables) ; newsletter du footer =
+simple lien vers `/signup` (réutilise l'opt-in existant, aucun nouveau
+mécanisme de consentement) ; pages légales = **stubs** à remplir.
+
+- **Renommage marque** : « Bénévoles+ » → **« Bénévoles Lavaux »** (décision
+  produit — le nom était jusque-là un *nom de travail*, cf.
+  `roadmap.md` §Décisions ouvertes #4). Mis à jour dans `index.html`,
+  `site-header`, pages `Login`/`Signup`, les 3 fallbacks d'expéditeur email
+  (`resend/client.ts`, edge functions `notify-coordinator`/`send-newsletter`)
+  et les titres de la doc. Les entrées historiques du changelog gardent
+  « Bénévoles+ » tel qu'écrit à l'époque.
+- **RPC `platform_impact_stats()`** (migration `20260706120000`) :
+  `SECURITY DEFINER`, `GRANT ... anon, authenticated`, retourne **uniquement
+  des agrégats globaux** (manifestations publiées, bénévoles, heures de
+  bénévolat sur signups `completed`) — aucune PII, aucune donnée admin par
+  manifestation, conforme au non-négociable d'isolation RLS. Types ajoutés à
+  la main dans `database.types.ts` (Docker/`supabase` local indisponible au
+  moment de l'écriture) — **à régénérer** via `supabase gen types` une fois
+  la migration appliquée.
+- **Landing** (`src/pages/Landing.tsx`) restructurée dans l'ordre du modèle :
+  hero → marquee → bandeau statistiques → manifestations à venir → mission +
+  bénéfices → grille partenaires → footer. La grille partenaires réutilise la
+  même requête que `/partenaires`.
+- **Footer partagé** (`src/components/site-footer.tsx`, 4 colonnes) ajouté aux
+  pages publiques (Landing, Partners, Organizers, ManifestationDetail, pages
+  légales). Icônes de marque des réseaux sociaux absentes de ce fork de
+  `lucide-react` → liens texte avec URLs placeholder (`SOCIAL_LINKS`) à
+  remplir.
+- **Pages légales stub** : `/mentions-legales`, `/confidentialite`, `/cgu`
+  (`src/pages/legal/*`) — gabarits « contenu à compléter » (le texte légal
+  reste à valider avant prod, cf. non-négociable nLPD/consentement).
 
 ## 2026-07-03 (suite) — Formulaires de création de manifestation enrichis
 

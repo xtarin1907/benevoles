@@ -1,4 +1,4 @@
-# Documentation — Bénévoles+
+# Documentation — Bénévoles Lavaux
 
 Index de la documentation du projet. **Ces documents sont l'état de travail
 courant, à relire en entier avant toute modification** (voir `CLAUDE.md`

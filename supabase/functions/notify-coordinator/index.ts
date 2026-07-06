@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts"
 import { AuthError, createServiceRoleClient, getCaller } from "../_shared/auth.ts"
+import { brandEmail } from "../_shared/email.ts"
 
 function escapeHtml(text: string) {
   return text
@@ -77,12 +78,12 @@ Deno.serve(async (req) => {
     if (!resendApiKey) {
       throw new AuthError(500, "Notification non configurée : RESEND_API_KEY manquant.")
     }
-    const from = Deno.env.get("RESEND_FROM_EMAIL") ?? "Bénévoles+ <onboarding@resend.dev>"
+    const from = Deno.env.get("RESEND_FROM_EMAIL") ?? "Bénévoles Lavaux <onboarding@resend.dev>"
 
     const volunteerLabel = volunteer?.full_name ?? volunteer?.email ?? "Un(e) bénévole"
     const shiftDate = new Date(signup.shifts.start_at).toLocaleString("fr-CH")
-    const html = `<p>${escapeHtml(volunteerLabel)} ${ACTION_LABELS[action]} :</p>
-<p><strong>${escapeHtml(manifestation.name)}</strong> — ${escapeHtml(signup.shifts.name)}<br>${escapeHtml(shiftDate)}</p>`
+    const html = brandEmail(`<p>${escapeHtml(volunteerLabel)} ${ACTION_LABELS[action]} :</p>
+<p><strong>${escapeHtml(manifestation.name)}</strong> — ${escapeHtml(signup.shifts.name)}<br>${escapeHtml(shiftDate)}</p>`)
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
